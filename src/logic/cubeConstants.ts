@@ -36,6 +36,13 @@ export const ADJACENT_FACES: Record<CubeColor, CubeColor[]> = {
 export type TargetRelation = 'up' | 'down' | 'left' | 'right' | 'front' | 'back';
 export const TARGET_RELATIONS: TargetRelation[] = ['up', 'down', 'left', 'right', 'front', 'back'];
 
+// Export mapping from Face notation (used in logic) to Relation name (used in UI/Problem)
+// Assumes Face type is defined/exported in orientation.ts or moved here
+import type { Face } from './orientation'; // Import type
+export const FACE_TO_RELATION_MAP: Record<Face, TargetRelation> = {
+    U: 'up', D: 'down', L: 'left', R: 'right', F: 'front', B: 'back',
+};
+
 // Map TargetRelation to standard face notation (relative to given Front/Up or Front/Right)
 // This might be better handled by rotation logic, but starting simple
 // Example: If Front=Red, Up=White, then Right=Blue, Left=Green, Back=Orange, Down=Yellow

@@ -9,8 +9,8 @@ interface AnswerPadProps {
 
 // Tailwind color mapping
 const colorClasses: Record<CubeColor, { bg: string; text: string; ring: string }> = {
-  white: { bg: 'bg-gray-100', text: 'text-black', ring: 'focus:ring-gray-400' },
-  yellow: { bg: 'bg-yellow-400', text: 'text-black', ring: 'focus:ring-yellow-600' },
+  white: { bg: 'bg-white', text: 'text-black', ring: 'focus:ring-gray-400' },
+  yellow: { bg: 'bg-yellow-400', text: 'text-yellow-900', ring: 'focus:ring-yellow-600' },
   blue: { bg: 'bg-blue-600', text: 'text-white', ring: 'focus:ring-blue-800' },
   green: { bg: 'bg-green-600', text: 'text-white', ring: 'focus:ring-green-800' },
   red: { bg: 'bg-red-600', text: 'text-white', ring: 'focus:ring-red-800' },
@@ -18,8 +18,8 @@ const colorClasses: Record<CubeColor, { bg: string; text: string; ring: string }
 };
 
 const feedbackClasses = {
-    correct: 'bg-green-500 ring-4 ring-green-300',
-    incorrect: 'bg-red-500 ring-4 ring-red-300',
+    correct: 'bg-green-500 !text-white ring-4 ring-green-300',
+    incorrect: 'bg-red-500 !text-white ring-4 ring-red-300',
 };
 
 const AnswerPad: React.FC<AnswerPadProps> = ({ onSelectColor, feedbackColor, feedbackState }) => {

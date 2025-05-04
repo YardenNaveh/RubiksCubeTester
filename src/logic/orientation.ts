@@ -7,140 +7,205 @@ import {
   ADJACENT_FACES
 } from './cubeConstants';
 
-export interface OrientationProblem {
-  frontFaceColor: CubeColor;
-  rightFaceColor: CubeColor; // Defining with Front+Right is sufficient
-  targetRelation: TargetRelation;
-  correctAnswer: CubeColor;
-  upFaceColor: CubeColor;
-  leftFaceColor: CubeColor;
-  downFaceColor: CubeColor;
-  backFaceColor: CubeColor;
-}
+// --- Define standard face notation (used internally) ---
+export type Face = 'U' | 'D' | 'F' | 'B' | 'L' | 'R';
+const FACES: Face[] = ['U', 'D', 'F', 'B', 'L', 'R'];
+
+// --- Map TargetRelation to Face (relative concept) ---
+// We assume a view where you look at the FRONT face,
+// UP is towards the U face, RIGHT is towards the R face etc.
+const RELATION_TO_FACE_MAP: Record<TargetRelation, Face> = {
+  up: 'U',
+  down: 'D',
+  left: 'L',
+  right: 'R',
+  front: 'F',
+  back: 'B',
+};
+
+const FACE_TO_RELATION_MAP: Record<Face, TargetRelation> = {
+    U: 'up', D: 'down', L: 'left', R: 'right', F: 'front', B: 'back',
+};
+
+// --- Define the standard "solved" state relative to White=Up, Red=Front ---
+const STANDARD_FACE_COLORS: Record<Face, CubeColor> = {
+  U: 'white', D: 'yellow',
+  F: 'red',   B: 'orange',
+  R: 'blue',  L: 'green',
+};
+
+// Inverse map: Color -> Standard Face
+const STANDARD_COLOR_TO_FACE = Object.fromEntries(
+    Object.entries(STANDARD_FACE_COLORS).map(([face, color]) => [color, face])
+) as Record<CubeColor, Face>; // Add type assertion
+
+// --- Define adjacencies between standard FACES ---
+const FACE_ADJACENCIES: Record<Face, Face[]> = {
+  U: ['F', 'B', 'L', 'R'],
+  D: ['F', 'B', 'L', 'R'],
+  F: ['U', 'D', 'L', 'R'],
+  B: ['U', 'D', 'L', 'R'],
+  L: ['U', 'D', 'F', 'B'],
+  R: ['U', 'D', 'F', 'B'],
+};
 
 // Helper to get a random element from an array
 function getRandomElement<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// Given Front and Right colors, determine all other face colors
-// based on the standard Western color scheme
-export function determineFullOrientation(
-  front: CubeColor,
-  right: CubeColor
-): { [key in TargetRelation | 'currentFront' | 'currentRight']: CubeColor } {
-  if (!ADJACENT_FACES[front].includes(right)) {
-    throw new Error(`Front (${front}) and Right (${right}) faces cannot be adjacent.`);
-  }
-
-  const back = COLOR_PAIRS[front];
-  const left = COLOR_PAIRS[right];
-
-  // Determine Up/Down based on standard adjacencies
-  // This is the trickiest part and defines the standard orientation model
-  let up: CubeColor;
-  let down: CubeColor;
-
-  // Standard layout assumption: White-Up, Red-Front -> Blue-Right
-  // We need to derive the Up color based on the given Front and Right
-  // This essentially involves solving a small spatial puzzle based on the fixed color scheme.
-
-  // Example cases based on standard Western Scheme:
-  // F=Red, R=Blue => U=White
-  // F=Blue, R=Orange => U=White
-  // F=Orange, R=Green => U=White
-  // F=Green, R=Red => U=White
-  // F=Red, R=Green => U=Yellow (Down is white)
-  // F=Blue, R=Red => U=Yellow
-  // etc.
-
-  // Let's find the common adjacent color to Front and Right that is NOT the opposite of the other
-  const commonAdjacent = ADJACENT_FACES[front].filter(
-    color => ADJACENT_FACES[right].includes(color)
-  );
-
-  if (commonAdjacent.length !== 2) {
-      // Should always be 2 common neighbors (Up and Down)
-      throw new Error("Internal error: Invalid adjacency calculation.");
-  }
-
-  // How to decide which of the two common neighbors is UP?
-  // We need a reference point. Let's use the standard White-Up, Yellow-Down reference.
-  // If F=Red, R=Blue, common are White/Yellow. Standard orientation has White Up.
-  // If F=Red, R=Green, common are White/Yellow. Standard orientation has Yellow Up.
-
-  // A simpler way might be a lookup table based on Front/Right pairs.
-  // THIS LOOKUP NOW ASSUMES WHITE-DOWN / YELLOW-UP
-  const upLookup: { [key: string]: CubeColor } = {
-    // Original White-UP pairs now map to Yellow-UP
-    'red-blue': 'yellow', 'blue-orange': 'yellow', 'orange-green': 'yellow', 'green-red': 'yellow',
-
-    // Pairs where Green was UP (relative to Front/Right) remain the same
-    'red-white': 'green', 'white-orange': 'green', 'orange-yellow': 'green', 'yellow-red': 'green',
-
-    // Original Yellow-UP pairs now map to White-UP
-    'red-green': 'white', 'green-orange': 'white', 'orange-blue': 'white', 'blue-red': 'white',
-
-    // Pairs where Red was UP remain the same
-    'blue-white': 'red', 'white-green': 'red', 'green-yellow': 'red', 'yellow-blue': 'red',
-
-    // Pairs where Orange was UP remain the same
-    'green-white': 'orange', 'white-red': 'orange', 'red-yellow': 'orange', 'yellow-green': 'orange',
-
-    // Pairs where Blue was UP remain the same
-    'orange-white': 'blue', 'white-blue': 'blue', 'blue-yellow': 'blue', 'yellow-orange': 'blue',
-  };
-
-  const key = `${front}-${right}` as keyof typeof upLookup;
-  if (!(key in upLookup)) {
-      throw new Error(`Internal error: Missing Front/Right pair in lookup: ${key}`);
-  }
-  up = upLookup[key];
-  down = COLOR_PAIRS[up];
-
-  return {
-    front: front,
-    back: back,
-    left: left,
-    right: right,
-    up: up,
-    down: down,
-    currentFront: front,
-    currentRight: right,
-  };
+// --- Main Logic: Determine colors relative to a chosen bottom ---
+interface OrientationMap {
+    faceColors: Record<Face, CubeColor>; // Map from standard Face (U,F..) to actual Color
+    colorFaces: Record<CubeColor, Face>; // Map from actual Color to standard Face
 }
 
+function getOrientationMap(bottomColor: CubeColor): OrientationMap {
+    const bottomFace = STANDARD_COLOR_TO_FACE[bottomColor]; // e.g., if bottomColor='blue', bottomFace='R'
+    const topFace = STANDARD_COLOR_TO_FACE[COLOR_PAIRS[bottomColor]]; // e.g., topFace='L'
 
-export function generateOrientationProblem(): OrientationProblem {
-  // 1. Pick a random Front face color
-  const frontFaceColor = getRandomElement(COLORS);
+    // We need a consistent way to determine Front/Back/Left/Right relative to the new Top/Bottom
+    // This essentially requires defining a rotation from the standard White=UP orientation.
+    
+    // --- Simplified Approach for V1.1 --- 
+    // Let's stick to the concept that White/Yellow, Blue/Green, Red/Orange are pairs.
+    // If Bottom is White (standard D), then U=Y, F=R, B=O, L=G, R=B.
+    // If Bottom is Blue (standard R), then Top is Green (standard L).
+    // How to find Front? Let's assume we keep White/Yellow axis fixed if possible.
+    // If Bottom=Blue(R), Top=Green(L). Keep White(U)/Yellow(D) as U/D? No, that violates adjacency.
+    // We need to rotate. Imagine rotating the cube so Blue is at the bottom.
+    // If Blue moves to D, then: R->D. Standard R neighbours are U,D,F,B.
+    // U(W)->F, D(Y)->B, F(R)->U(?), B(O)->D(?) - this mapping gets complex quickly.
 
-  // 2. Pick a random Right face color that is adjacent to Front
-  const possibleRightColors = ADJACENT_FACES[frontFaceColor];
-  const rightFaceColor = getRandomElement(possibleRightColors);
+    // --- Revised Simplified Approach: Fixed Reference Frame --- 
+    // Keep the STANDARD_FACE_COLORS as the *absolute* reference.
+    // When generating a problem, pick a `bottomColor`. Calculate all face colors
+    // *relative* to that bottom color by finding the corresponding STANDARD face
+    // and using the standard adjacencies.
+    
+    // Example: bottomColor = blue. Standard face for blue is R.
+    // The face physically opposite blue is green (standard L).
+    // The faces adjacent to blue are white(U), yellow(D), red(F), orange(B).
+    // This doesn't directly give us the orientation map easily.
 
-  // 3. Determine the full orientation based on Front and Right
-  const orientation = determineFullOrientation(frontFaceColor, rightFaceColor);
+    // === Let's use the original lookup approach BUT adapt it ===
+    // The lookup determined the UP color given FRONT and RIGHT colors, assuming White=UP.
+    // We can *adapt* this. Given two *reference colors* (ref1Color, ref2Color) and their *intended relative positions* 
+    // (e.g., ref1 is FRONT, ref2 is RIGHT), and a desired `bottomColor`, we can find the implied UP color.
 
-  // 4. Pick a random target relation
-  const targetRelation = getRandomElement(TARGET_RELATIONS);
-
-  // 5. Determine the correct answer color for that relation
-  const correctAnswer = orientation[targetRelation];
-
-  return {
-    frontFaceColor,
-    rightFaceColor,
-    targetRelation,
-    correctAnswer,
-    upFaceColor: orientation.up,
-    leftFaceColor: orientation.left,
-    downFaceColor: orientation.down,
-    backFaceColor: orientation.back,
-  };
+    // THIS FUNCTION BECOMES REDUNDANT with the new problem generation approach below.
+    // We'll calculate colors directly in generateOrientationProblem.
+    throw new Error("getOrientationMap is deprecated by the new approach.");
 }
 
-// Utility to check answer (can be used in the component)
+// --- New Problem Structure ---
+export interface OrientationProblem {
+    ref1Face: Face;         // Standard name of 1st ref face (e.g., 'F')
+    ref2Face: Face;         // Standard name of 2nd ref face (e.g., 'R')
+    ref1Color: CubeColor;   // Actual color appearing on ref1Face
+    ref2Color: CubeColor;   // Actual color appearing on ref2Face
+    targetRelation: TargetRelation; // Relation asked (e.g., 'up')
+    correctAnswer: CubeColor; // The color at the targetRelation
+    faceColors: Record<Face, CubeColor>; // Full map Face -> Color for this orientation
+    bottomColor: CubeColor; // The setting used
+}
+
+// --- Determine face colors based on the desired bottom color --- 
+// Returns a map where keys are standard faces (U, D, F...) and values
+// are the *actual* colors on those faces when `bottomColor` is at the bottom.
+function determineOrientationColors(bottomColor: CubeColor): Record<Face, CubeColor> {
+    const actualFaceColors: Partial<Record<Face, CubeColor>> = {};
+    
+    // Simplified rotation mappings based on desired bottom color
+    switch(bottomColor) {
+        case 'white': // U -> D
+            actualFaceColors['U'] = STANDARD_FACE_COLORS['D']; 
+            actualFaceColors['D'] = STANDARD_FACE_COLORS['U']; 
+            actualFaceColors['F'] = STANDARD_FACE_COLORS['B']; 
+            actualFaceColors['B'] = STANDARD_FACE_COLORS['F']; 
+            actualFaceColors['L'] = STANDARD_FACE_COLORS['L']; 
+            actualFaceColors['R'] = STANDARD_FACE_COLORS['R']; 
+            break;
+        case 'yellow': // D -> D (Standard)
+            Object.assign(actualFaceColors, STANDARD_FACE_COLORS);
+            break;
+        case 'red': // F -> D 
+            actualFaceColors['U'] = STANDARD_FACE_COLORS['F']; // Red 
+            actualFaceColors['D'] = STANDARD_FACE_COLORS['B']; // Orange
+            actualFaceColors['F'] = STANDARD_FACE_COLORS['D']; // Yellow
+            actualFaceColors['B'] = STANDARD_FACE_COLORS['U']; // White
+            actualFaceColors['L'] = STANDARD_FACE_COLORS['L']; // Green
+            actualFaceColors['R'] = STANDARD_FACE_COLORS['R']; // Blue
+            break;
+        case 'orange': // B -> D
+            actualFaceColors['U'] = STANDARD_FACE_COLORS['B']; // Orange
+            actualFaceColors['D'] = STANDARD_FACE_COLORS['F']; // Red
+            actualFaceColors['F'] = STANDARD_FACE_COLORS['U']; // White
+            actualFaceColors['B'] = STANDARD_FACE_COLORS['D']; // Yellow
+            actualFaceColors['L'] = STANDARD_FACE_COLORS['L']; // Green
+            actualFaceColors['R'] = STANDARD_FACE_COLORS['R']; // Blue
+            break;
+         case 'blue': // R -> D
+            actualFaceColors['U'] = STANDARD_FACE_COLORS['F']; // Red 
+            actualFaceColors['D'] = STANDARD_FACE_COLORS['B']; // Orange
+            actualFaceColors['F'] = STANDARD_FACE_COLORS['L']; // Green
+            actualFaceColors['B'] = STANDARD_FACE_COLORS['R']; // Blue
+            actualFaceColors['L'] = STANDARD_FACE_COLORS['D']; // Yellow
+            actualFaceColors['R'] = STANDARD_FACE_COLORS['U']; // White
+            break;
+        case 'green': // L -> D
+            actualFaceColors['U'] = STANDARD_FACE_COLORS['F']; // Red
+            actualFaceColors['D'] = STANDARD_FACE_COLORS['B']; // Orange
+            actualFaceColors['F'] = STANDARD_FACE_COLORS['R']; // Blue
+            actualFaceColors['B'] = STANDARD_FACE_COLORS['L']; // Green
+            actualFaceColors['L'] = STANDARD_FACE_COLORS['U']; // White
+            actualFaceColors['R'] = STANDARD_FACE_COLORS['D']; // Yellow
+            break;
+    }
+    return actualFaceColors as Record<Face, CubeColor>;
+}
+
+// --- Generate Problem --- 
+export function generateOrientationProblem(bottomColor: CubeColor): OrientationProblem {
+    
+    const faceColors: Record<Face, CubeColor> = determineOrientationColors(bottomColor);
+
+    const ref1Face = getRandomElement(FACES);
+    // Filter adjacent faces correctly: ensure the *standard face* corresponding to the color isn't opposite ref1
+    const possibleRef2 = FACE_ADJACENCIES[ref1Face].filter(adjFace => {
+        const actualColorOnAdjFace = faceColors[adjFace];
+        const standardFaceOfActualColor = STANDARD_COLOR_TO_FACE[actualColorOnAdjFace];
+        const standardFaceOfRef1Color = STANDARD_COLOR_TO_FACE[faceColors[ref1Face]];
+        // Check if the *standard faces* of the colors are opposite
+        return standardFaceOfActualColor !== STANDARD_COLOR_TO_FACE[COLOR_PAIRS[faceColors[ref1Face]]]; 
+    });
+    if(possibleRef2.length === 0) { 
+        // This should ideally not happen with correct logic, but as a fallback:
+        console.warn("Could not find non-opposite adjacent face, picking random adjacent.");
+        possibleRef2.push(...FACE_ADJACENCIES[ref1Face]);
+    }
+    const ref2Face = getRandomElement(possibleRef2);
+
+    const ref1Color = faceColors[ref1Face];
+    const ref2Color = faceColors[ref2Face];
+
+    const targetFace = getRandomElement(FACES.filter(f => f !== ref1Face && f !== ref2Face));
+    const targetRelation = FACE_TO_RELATION_MAP[targetFace];
+    const correctAnswer = faceColors[targetFace];
+
+    return {
+        ref1Face,          // Standard name (F, R, U...)
+        ref2Face,          // Standard name (F, R, U...)
+        ref1Color,         // Actual color on that face
+        ref2Color,         // Actual color on that face
+        targetRelation,    // Relation asked (up, down...)
+        correctAnswer,     // Actual color expected
+        faceColors,        // Full map Face -> Color
+        bottomColor,       // Setting used
+    };
+}
+
+// --- Check Answer --- 
 export function checkAnswer(
   problem: OrientationProblem,
   selectedColor: CubeColor

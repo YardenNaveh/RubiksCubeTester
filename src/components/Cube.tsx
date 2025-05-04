@@ -5,12 +5,13 @@ import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'; // Use
 interface CubeProps {
   frontFaceColor: CubeColor;
   rightFaceColor: CubeColor;
-  upFaceColor: CubeColor; // Needed to show the top face color correctly
+  // upFaceColor is no longer needed for display but kept for potential future use or debugging
+  upFaceColor: CubeColor; 
   targetRelation: TargetRelation;
   showArrow: boolean; // Control arrow visibility for animation
 }
 
-// Tailwind color mapping (subset needed for cube faces)
+// Tailwind color mapping for the two visible faces
 const colorClasses: Record<CubeColor, string> = {
   white: 'bg-gray-100',
   yellow: 'bg-yellow-400',
@@ -22,21 +23,23 @@ const colorClasses: Record<CubeColor, string> = {
 
 // Map relation to arrow component and rotation
 const arrowMap: Record<TargetRelation, { Icon: React.ElementType, rotation: string, position?: string }> = {
-  up: { Icon: ArrowUp, rotation: 'rotate-0', position: 'top-1/4' },
-  down: { Icon: ArrowDown, rotation: 'rotate-0', position: 'bottom-1/4' }, // Might need adjustment based on cube perspective
-  left: { Icon: ArrowLeft, rotation: 'rotate-0', position: 'left-1/4' },
-  right: { Icon: ArrowRight, rotation: 'rotate-0', position: 'right-1/4' },
-  front: { Icon: ArrowRight, rotation: '-rotate-45', position: 'top-[40%] left-[40%]' }, // Placeholder - pointing towards viewer
-  back: { Icon: ArrowLeft, rotation: 'rotate-[135deg]', position: 'top-[15%] left-[15%]' }, // Placeholder - pointing away
+  up: { Icon: ArrowUp, rotation: 'rotate-0' },
+  down: { Icon: ArrowDown, rotation: 'rotate-0' },
+  left: { Icon: ArrowLeft, rotation: 'rotate-0' }, 
+  right: { Icon: ArrowRight, rotation: 'rotate-0' }, 
+  // Front/Back arrows are less intuitive in this projection, but keep placeholders
+  front: { Icon: ArrowRight, rotation: '-rotate-45' },
+  back: { Icon: ArrowLeft, rotation: 'rotate-[135deg]' }, 
 };
 
-const Cube: React.FC<CubeProps> = ({ frontFaceColor, rightFaceColor, upFaceColor, targetRelation, showArrow }) => {
+const Cube: React.FC<CubeProps> = ({ frontFaceColor, rightFaceColor, targetRelation, showArrow }) => {
   const cubeSize = 180; // Base size in px
   const perspective = 1000; // CSS perspective value
+  const halfSize = cubeSize / 2;
+  const faceBaseClasses = "absolute w-full h-full border border-black/50"; // Base classes for all faces
 
   const ArrowComponent = arrowMap[targetRelation]?.Icon;
   const arrowRotation = arrowMap[targetRelation]?.rotation || 'rotate-0';
-  // Note: Arrow positioning for front/back is approximate and might need refinement.
 
   return (
     <div
@@ -49,47 +52,55 @@ const Cube: React.FC<CubeProps> = ({ frontFaceColor, rightFaceColor, upFaceColor
     >
       {/* Cube container for 3D transforms */}
       <div
-        className="relative w-full h-full transition-transform duration-500 ease-in-out"
+        className="relative w-full h-full"
         style={{ transformStyle: 'preserve-3d', transform: 'rotateX(-25deg) rotateY(45deg)' }} // Isometric view angle
       >
-        {/* Front Face */}
+        {/* Front Face (Colored) */}
         <div
-          className={`absolute w-full h-full border border-black/50 ${colorClasses[frontFaceColor]}`}
-          style={{ transform: `translateZ(${cubeSize / 2}px)` }}
+          className={`${faceBaseClasses} ${colorClasses[frontFaceColor]}`}
+          style={{ transform: `translateZ(${halfSize}px)` }}
         ></div>
 
-        {/* Right Face */}
+        {/* Right Face (Colored) */}
         <div
-          className={`absolute w-full h-full border border-black/50 ${colorClasses[rightFaceColor]}`}
-          style={{
-            transform: `rotateY(90deg) translateZ(${cubeSize / 2}px)`,
-          }}
+          className={`${faceBaseClasses} ${colorClasses[rightFaceColor]}`}
+          style={{ transform: `rotateY(90deg) translateZ(${halfSize}px)` }}
         ></div>
 
-        {/* Top Face */}
+        {/* Top Face (Wireframe) */}
         <div
-          className={`absolute w-full h-full border border-black/50 ${colorClasses[upFaceColor]}`}
-          style={{
-            transform: `rotateX(-90deg) translateZ(${cubeSize / 2}px)`,
-          }}
+          className={`${faceBaseClasses}`}
+          style={{ transform: `rotateX(-90deg) translateZ(${halfSize}px)` }}
+        ></div>
+        
+        {/* Left Face (Wireframe) */}
+        <div
+          className={`${faceBaseClasses}`}
+          style={{ transform: `rotateY(-90deg) translateZ(${halfSize}px)` }}
         ></div>
 
-        {/* Note: Other faces (Left, Bottom, Back) are not strictly needed for the 2-face view */}
+        {/* Back Face (Wireframe) */}
+        <div
+          className={`${faceBaseClasses}`}
+          style={{ transform: `rotateY(180deg) translateZ(${halfSize}px)` }}
+        ></div>
+
+        {/* Bottom Face (Wireframe) */}
+        <div
+          className={`${faceBaseClasses}`}
+          style={{ transform: `rotateX(90deg) translateZ(${halfSize}px)` }}
+        ></div>
       </div>
 
-      {/* Arrow Overlay - positioned relative to the outer container */}
+      {/* Arrow Overlay */}
       {ArrowComponent && (
         <div
-          className={`
-            absolute inset-0 flex items-center justify-center 
-            transition-opacity duration-300 ease-in-out 
-            ${showArrow ? 'opacity-100' : 'opacity-0'}
-          `}
-          // style={{ transform: `translateZ(${cubeSize * 0.7}px)` }} // Bring arrow slightly forward
+          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ease-in-out ${showArrow ? 'opacity-100' : 'opacity-0'}`}
+          style={{ transform: 'translateZ(1px)' }} // Bring arrow slightly in front of faces
         >
-            <div className={`transform ${arrowRotation}`}> 
-                <ArrowComponent size={cubeSize * 0.4} className="text-black opacity-75 drop-shadow-lg" />
-            </div>
+          <div className={`transform ${arrowRotation}`}> 
+            <ArrowComponent size={cubeSize * 0.4} className="text-black opacity-75 drop-shadow-lg" />
+          </div>
         </div>
       )}
     </div>

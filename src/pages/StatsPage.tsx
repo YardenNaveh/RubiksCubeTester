@@ -66,46 +66,51 @@ const StatsPage: React.FC<StatsPageProps> = ({ appData, setAppData }) => {
         title: {
           display: true,
           text: 'Time (ms)',
+          color: '#cbd5e1' // slate-300
         },
+        ticks: { color: '#94a3b8' }, // slate-400
+        grid: { color: '#334155' }, // slate-700
       },
       x: {
         title: {
             display: true,
-            text: 'Last Attempts'
-        }
+            text: 'Last Attempts',
+            color: '#cbd5e1' // slate-300
+        },
+        ticks: { color: '#94a3b8' }, // slate-400
+        grid: { color: '#334155' }, // slate-700
       }
     },
     plugins: {
-      legend: {
-        display: false, // Keep it clean
-      },
+      legend: { display: false },
       title: {
         display: true,
         text: 'Last 50 Reaction Times',
+        color: '#e2e8f0' // slate-200
       },
     },
   };
 
   return (
-    <div className="flex flex-col p-4 bg-white rounded-lg shadow-md space-y-4">
-      <h1 className="text-2xl font-semibold text-center text-slate-700">Statistics</h1>
+    <div className="flex flex-col p-4 bg-slate-800 rounded-lg shadow-md space-y-4">
+      <h1 className="text-2xl font-semibold text-center text-slate-100">Statistics</h1>
 
       <div className="grid grid-cols-2 gap-4 text-center">
-        <div className="bg-slate-100 p-3 rounded">
-          <div className="text-sm text-slate-500">Total Answered</div>
-          <div className="text-xl font-medium text-slate-800">{stats.total}</div>
+        <div className="bg-slate-700 p-3 rounded">
+          <div className="text-sm text-slate-400">Total Answered</div>
+          <div className="text-xl font-medium text-slate-100">{stats.total}</div>
         </div>
-        <div className="bg-slate-100 p-3 rounded">
-          <div className="text-sm text-slate-500">Accuracy</div>
-          <div className="text-xl font-medium text-slate-800">{accuracy}%</div>
+        <div className="bg-slate-700 p-3 rounded">
+          <div className="text-sm text-slate-400">Accuracy</div>
+          <div className="text-xl font-medium text-slate-100">{accuracy}%</div>
         </div>
-        <div className="bg-slate-100 p-3 rounded">
-          <div className="text-sm text-slate-500">Best Streak</div>
-          <div className="text-xl font-medium text-slate-800">{stats.bestStreak}</div>
+        <div className="bg-slate-700 p-3 rounded">
+          <div className="text-sm text-slate-400">Best Streak</div>
+          <div className="text-xl font-medium text-slate-100">{stats.bestStreak}</div>
         </div>
-        <div className="bg-slate-100 p-3 rounded">
-          <div className="text-sm text-slate-500">Average Time</div>
-          <div className="text-xl font-medium text-slate-800">{avgTime} ms</div>
+        <div className="bg-slate-700 p-3 rounded">
+          <div className="text-sm text-slate-400">Average Time</div>
+          <div className="text-xl font-medium text-slate-100">{avgTime} ms</div>
         </div>
       </div>
 
@@ -113,7 +118,7 @@ const StatsPage: React.FC<StatsPageProps> = ({ appData, setAppData }) => {
         {last50Times.length > 0 ? (
           <Bar options={chartOptions} data={chartData} />
         ) : (
-          <p className="text-center text-slate-500 pt-10">No timing data yet.</p>
+          <p className="text-center text-slate-400 pt-10">No timing data yet.</p>
         )}
       </div>
 

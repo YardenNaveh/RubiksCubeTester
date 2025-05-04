@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 
 // Define the structure for the data stored in localStorage
-import { CubeColor } from '../logic/cubeConstants';
+import { CubeColor, COLORS } from '../logic/cubeConstants';
 
 export interface Settings {
   muted: boolean;
-  bottomColor: CubeColor; // default "white" -> NOTE: Logic currently fixed to White-Down
+  bottomColor: CubeColor; // Now actively used
 }
 export interface DrillStats {
   total: number;
@@ -24,7 +24,7 @@ const STORAGE_KEY = 'rubiks-trainer-v1';
 
 const DEFAULT_SETTINGS: Settings = {
   muted: false,
-  bottomColor: 'white', // Default conceptually, though logic is fixed White-Down
+  bottomColor: 'white', // Explicit default
 };
 
 const DEFAULT_STATS: DrillStats = {

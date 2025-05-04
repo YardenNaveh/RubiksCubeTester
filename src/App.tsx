@@ -4,9 +4,10 @@ import StatsPage from './pages/StatsPage';
 import { useAppStorage } from './hooks/useLocalStorage';
 import Header from './components/Header';
 import { useEffect } from 'react';
+import { CubeColor } from './logic/cubeConstants';
 
 function App() {
-  const [appData, setAppData] = useAppStorage();
+  const [appData, setAppData, resetStats] = useAppStorage();
 
   // Register the service worker
   useEffect(() => {
@@ -40,12 +41,25 @@ function App() {
     }));
   };
 
+  const handleBottomColorChange = (newColor: CubeColor) => {
+    setAppData(prev => ({
+      ...prev,
+      settings: { ...prev.settings, bottomColor: newColor },
+    }));
+    // Note: May need to trigger a re-generation of the problem in DrillPage
+  };
+
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <div className="min-h-screen bg-slate-100 flex flex-col items-center font-sans">
+      <div className="min-h-screen bg-slate-900 text-slate-200 flex flex-col items-center font-sans">
         {/* Centered content container */} 
         <div className="w-full max-w-md flex-grow flex flex-col">
-          <Header isMuted={appData.settings.muted} onToggleMute={toggleMute} />
+          <Header 
+            isMuted={appData.settings.muted} 
+            onToggleMute={toggleMute}
+            currentBottomColor={appData.settings.bottomColor}
+            onBottomColorChange={handleBottomColorChange}
+          />
           <main className="flex-grow flex flex-col p-4">
             <Routes>
               <Route path="/" element={<DrillPage appData={appData} setAppData={setAppData} />} />
@@ -54,9 +68,9 @@ function App() {
               <Route path="*" element={<DrillPage appData={appData} setAppData={setAppData} />} />
             </Routes>
           </main>
-          {/* Optional Footer or link to stats */}
-           <footer className="p-4 text-center text-sm text-slate-500">
-             <Link to="/stats" className="hover:text-accent">View Stats</Link> | <a href="https://github.com/YardenNaveh/RubiksCubeTester" target="_blank" rel="noopener noreferrer" className="hover:text-accent">GitHub</a>
+          {/* Footer links - adjust color */}
+           <footer className="p-4 text-center text-sm text-slate-400">
+             <Link to="/stats" className="hover:text-sky-400">View Stats</Link> | <a href="https://github.com/YardenNaveh/RubiksCubeTester" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400">GitHub</a>
            </footer>
         </div>
       </div>
