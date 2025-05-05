@@ -3,6 +3,9 @@ import { useState, useEffect } from 'react';
 // Define the structure for the data stored in localStorage
 import { CubeColor, COLORS } from '../logic/cubeConstants';
 
+// Export bottom color setting type for components
+export type BottomColorSetting = CubeColor;
+
 export interface Settings {
   muted: boolean;
   bottomColor: CubeColor; // Now actively used

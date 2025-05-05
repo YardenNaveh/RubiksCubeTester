@@ -1,13 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Volume2, VolumeX } from 'lucide-react'; // Using lucide-react for icons
-import { CubeColor } from '../logic/cubeConstants'; // Import CubeColor
+import { CubeColor, COLORS } from '../logic/cubeConstants'; // Import COLORS
+import { BottomColorSetting } from '../hooks/useLocalStorage'; // Import setting type
 
 interface HeaderProps {
   isMuted: boolean;
   onToggleMute: () => void;
-  currentBottomColor: CubeColor;
-  onBottomColorChange: (color: CubeColor) => void;
+  currentBottomColor: BottomColorSetting; // Use setting type
+  onBottomColorChange: (setting: BottomColorSetting) => void; // Use setting type
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -27,16 +28,14 @@ const Header: React.FC<HeaderProps> = ({
            <label htmlFor="bottomColorSelect" className="text-xs text-slate-400">Bottom:</label>
            <select 
              id="bottomColorSelect"
-             value={currentBottomColor}
-             onChange={(e) => onBottomColorChange(e.target.value as CubeColor)}
-             className="bg-slate-700 text-slate-100 text-xs rounded p-1 border border-slate-600 focus:ring-sky-500 focus:border-sky-500"
+             value={currentBottomColor} // Handles 'random' or specific color
+             onChange={(e) => onBottomColorChange(e.target.value as BottomColorSetting)} // Cast to setting type
+             className="bg-slate-700 text-slate-100 text-xs rounded p-1 border border-slate-600 focus:ring-sky-500 focus:border-sky-500 capitalize"
            >
-             <option value="white">White</option>
-             <option value="yellow">Yellow</option>
-             <option value="red">Red</option>
-             <option value="orange">Orange</option>
-             <option value="blue">Blue</option>
-             <option value="green">Green</option>
+             <option value="random">Random</option> { /* Add Random */ }
+             {COLORS.map(color => ( // Populate dynamically
+               <option key={color} value={color}>{color}</option>
+             ))}
            </select>
         </div>
 

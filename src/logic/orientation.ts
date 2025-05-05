@@ -167,42 +167,51 @@ function determineOrientationColors(bottomColor: CubeColor): Record<Face, CubeCo
 
 // --- Generate Problem --- 
 export function generateOrientationProblem(bottomColor: CubeColor): OrientationProblem {
-    
-    const faceColors: Record<Face, CubeColor> = determineOrientationColors(bottomColor);
+  // Determine if bottom is fixed; if not, pick random bottom
+  const fixedBottom = COLORS.includes(bottomColor);
+  const actualBottom = fixedBottom ? bottomColor : getRandomElement(COLORS);
+  // Compute full orientation map for actual bottom
+  const faceColors: Record<Face, CubeColor> = determineOrientationColors(actualBottom);
 
-    const ref1Face = getRandomElement(FACES);
-    // Filter adjacent faces correctly: ensure the *standard face* corresponding to the color isn't opposite ref1
+  // Choose reference faces: always include down face if bottom fixed
+  let ref1Face: Face;
+  let ref2Face: Face;
+  if (fixedBottom) {
+    ref1Face = 'D';
+    ref2Face = getRandomElement(FACE_ADJACENCIES['D']);
+  } else {
+    ref1Face = getRandomElement(FACES);
     const possibleRef2 = FACE_ADJACENCIES[ref1Face].filter(adjFace => {
-        const actualColorOnAdjFace = faceColors[adjFace];
-        const standardFaceOfActualColor = STANDARD_COLOR_TO_FACE[actualColorOnAdjFace];
-        const standardFaceOfRef1Color = STANDARD_COLOR_TO_FACE[faceColors[ref1Face]];
-        // Check if the *standard faces* of the colors are opposite
-        return standardFaceOfActualColor !== STANDARD_COLOR_TO_FACE[COLOR_PAIRS[faceColors[ref1Face]]]; 
+      const actualColorOnAdj = faceColors[adjFace];
+      const stdFaceOfActual = STANDARD_COLOR_TO_FACE[actualColorOnAdj];
+      const stdOppositeOfRef1 = STANDARD_COLOR_TO_FACE[COLOR_PAIRS[faceColors[ref1Face]]];
+      return stdFaceOfActual !== stdOppositeOfRef1;
     });
-    if(possibleRef2.length === 0) { 
-        // This should ideally not happen with correct logic, but as a fallback:
-        console.warn("Could not find non-opposite adjacent face, picking random adjacent.");
-        possibleRef2.push(...FACE_ADJACENCIES[ref1Face]);
+    if (possibleRef2.length === 0) {
+      console.warn("Could not find non-opposite adjacent face, picking random adjacent.");
+      possibleRef2.push(...FACE_ADJACENCIES[ref1Face]);
     }
-    const ref2Face = getRandomElement(possibleRef2);
+    ref2Face = getRandomElement(possibleRef2);
+  }
 
-    const ref1Color = faceColors[ref1Face];
-    const ref2Color = faceColors[ref2Face];
+  const ref1Color = faceColors[ref1Face];
+  const ref2Color = faceColors[ref2Face];
 
-    const targetFace = getRandomElement(FACES.filter(f => f !== ref1Face && f !== ref2Face));
-    const targetRelation = FACE_TO_RELATION_MAP[targetFace];
-    const correctAnswer = faceColors[targetFace];
+  // Pick a target face distinct from references
+  const targetFace = getRandomElement(FACES.filter(f => f !== ref1Face && f !== ref2Face));
+  const targetRelation = FACE_TO_RELATION_MAP[targetFace];
+  const correctAnswer = faceColors[targetFace];
 
-    return {
-        ref1Face,          // Standard name (F, R, U...)
-        ref2Face,          // Standard name (F, R, U...)
-        ref1Color,         // Actual color on that face
-        ref2Color,         // Actual color on that face
-        targetRelation,    // Relation asked (up, down...)
-        correctAnswer,     // Actual color expected
-        faceColors,        // Full map Face -> Color
-        bottomColor,       // Setting used
-    };
+  return {
+    ref1Face,
+    ref2Face,
+    ref1Color,
+    ref2Color,
+    targetRelation,
+    correctAnswer,
+    faceColors,
+    bottomColor: actualBottom,
+  };
 }
 
 // --- Check Answer --- 

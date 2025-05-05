@@ -5,10 +5,8 @@ import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'; // Use
 interface CubeProps {
   frontFaceColor: CubeColor;
   rightFaceColor: CubeColor;
-  // upFaceColor is no longer needed for display but kept for potential future use or debugging
-  upFaceColor: CubeColor; 
   targetRelation: TargetRelation;
-  showArrow: boolean; // Control arrow visibility for animation
+  showArrow: boolean; // Control arrow visibility
 }
 
 // Tailwind color mapping for the two visible faces

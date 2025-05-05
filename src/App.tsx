@@ -11,26 +11,15 @@ function App() {
 
   // Register the service worker
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js') // Assuming sw.js is at the root after build
-        .then(registration => {
-          console.log('Service Worker registered with scope:', registration.scope);
-          // Optional: Handle updates
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New content is available, prompt user to refresh
-                  // console.log('New content is available; please refresh.');
-                  // You could show a notification here
-                }
-              });
-            }
-          });
-        }).catch(error => {
-          console.error('Service Worker registration failed:', error);
+    // Register service worker only in production
+    if ('serviceWorker' in navigator && import.meta.env.PROD) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(registration => {
+          console.log('SW registered: ', registration);
+        }).catch(registrationError => {
+          console.log('SW registration failed: ', registrationError);
         });
+      });
     }
   }, []);
 
