@@ -1,77 +1,70 @@
 import {
     generateOrientationProblem,
-    determineFullOrientation, // Keep if you want to test internal helpers
+    checkAnswer // Import checkAnswer if needed
   } from './orientation';
-  import { COLORS, COLOR_PAIRS, TARGET_RELATIONS, ADJACENT_FACES } from './cubeConstants';
+  import { COLORS, COLOR_PAIRS, FACE_TO_RELATION_MAP } from './cubeConstants';
+  import type { Face } from './orientation';
 
   describe('Cube Orientation Logic', () => {
 
-    // Optional: Test the internal helper if needed
-    describe('determineFullOrientation (White-Down Fixed)', () => {
-      it('should correctly determine faces for Front=Red, Right=Blue', () => {
-        const orientation = determineFullOrientation('red', 'blue');
-        expect(orientation.up).toBe('yellow'); // White is Down
-        expect(orientation.down).toBe('white');
-        expect(orientation.left).toBe('green');
-        expect(orientation.back).toBe('orange');
+    describe('generateOrientationProblem', () => {
+      it('should generate a valid problem structure for random bottom', () => {
+        const problem = generateOrientationProblem('random'); // Pass 'random'
+        expect(problem).toHaveProperty('ref1Face');
+        expect(problem).toHaveProperty('ref1Color');
+        expect(problem).toHaveProperty('ref2Face');
+        expect(problem).toHaveProperty('ref2Color');
+        expect(problem).toHaveProperty('targetRelation');
+        expect(problem).toHaveProperty('correctAnswer');
+        expect(problem).toHaveProperty('faceColors');
+        expect(problem).toHaveProperty('bottomColor');
+
+        expect(COLORS).toContain(problem.ref1Color);
+        expect(COLORS).toContain(problem.ref2Color);
+        expect(problem).toHaveProperty('correctAnswer');
+        expect(Object.values(FACE_TO_RELATION_MAP)).toContain(problem.targetRelation);
       });
 
-      it('should correctly determine faces for Front=Green, Right=White', () => {
-        const orientation = determineFullOrientation('green', 'white');
-        expect(orientation.up).toBe('orange');
-        expect(orientation.down).toBe('red');
-        expect(orientation.left).toBe('yellow');
-        expect(orientation.back).toBe('blue');
+      it('should ensure ref1 and ref2 colors are not opposites', () => {
+        for (let i = 0; i < 20; i++) { // Run multiple times for randomness
+          const problem = generateOrientationProblem('random');
+          expect(problem.ref2Color).not.toBe(COLOR_PAIRS[problem.ref1Color]);
+        }
       });
 
-      it('should throw error for non-adjacent faces', () => {
-        expect(() => determineFullOrientation('red', 'orange')).toThrow();
+      it('should compute the correct answer for random orientations', () => {
+        for (let i = 0; i < 10; i++) {
+          const problem = generateOrientationProblem('random');
+          const targetFace = Object.entries(FACE_TO_RELATION_MAP).find(([_, rel]) => rel === problem.targetRelation)?.[0] as Face | undefined;
+          expect(targetFace).toBeDefined();
+          if (!targetFace) continue; // Should not happen
+          expect(problem.correctAnswer).toBe(problem.faceColors[targetFace]);
+        }
+      });
+
+      it('should handle fixed bottom color (white)', () => {
+        const problem = generateOrientationProblem('white');
+        expect(problem.bottomColor).toBe('white');
+        expect(problem.ref1Face).toBe('D');
+        expect(problem.ref1Color).toBe('white');
+        expect(['F', 'R', 'B', 'L']).toContain(problem.ref2Face);
+        const targetFace = Object.entries(FACE_TO_RELATION_MAP).find(([_, rel]) => rel === problem.targetRelation)?.[0] as Face | undefined;
+        expect(targetFace).toBeDefined();
+        expect(['F', 'R', 'B', 'L']).toContain(targetFace);
+        expect(targetFace).not.toBe(problem.ref2Face);
+        expect(problem.correctAnswer).toBe(problem.faceColors[targetFace!]);
       });
     });
 
-    describe('generateOrientationProblem', () => {
-      it('should generate a valid problem structure', () => {
-        const problem = generateOrientationProblem();
-        expect(problem).toHaveProperty('frontFaceColor');
-        expect(problem).toHaveProperty('rightFaceColor');
-        expect(problem).toHaveProperty('targetRelation');
-        expect(problem).toHaveProperty('correctAnswer');
-        expect(problem).toHaveProperty('upFaceColor');
-        expect(problem).toHaveProperty('leftFaceColor');
-        expect(problem).toHaveProperty('downFaceColor');
-        expect(problem).toHaveProperty('backFaceColor');
-
-        expect(COLORS).toContain(problem.frontFaceColor);
-        expect(COLORS).toContain(problem.rightFaceColor);
-        expect(problem).toHaveProperty('correctAnswer');
-        expect(TARGET_RELATIONS).toContain(problem.targetRelation);
+    describe('checkAnswer', () => {
+      it('should return true for correct answer', () => {
+        const problem = generateOrientationProblem('white');
+        expect(checkAnswer(problem, problem.correctAnswer)).toBe(true);
       });
-
-      it('should ensure Front and Right faces are adjacent', () => {
-        for (let i = 0; i < 20; i++) { // Run multiple times for randomness
-          const problem = generateOrientationProblem();
-          expect(ADJACENT_FACES[problem.frontFaceColor]).toContain(problem.rightFaceColor);
-          expect(problem.rightFaceColor).not.toBe(COLOR_PAIRS[problem.frontFaceColor]);
-        }
-      });
-
-      // Test 10 random orientations as requested
-      it('should compute the correct answer for 10 random orientations', () => {
-        for (let i = 0; i < 10; i++) {
-          const problem = generateOrientationProblem();
-          // Re-calculate the orientation based on the generated Front/Right to verify
-          const verificationOrientation = determineFullOrientation(
-            problem.frontFaceColor,
-            problem.rightFaceColor
-          );
-          // Check if the correctAnswer stored in the problem matches the re-calculated color for the targetRelation
-          expect(problem.correctAnswer).toBe(verificationOrientation[problem.targetRelation]);
-          // Also verify all derived faces match
-          expect(problem.upFaceColor).toBe(verificationOrientation.up);
-          expect(problem.downFaceColor).toBe(verificationOrientation.down);
-          expect(problem.leftFaceColor).toBe(verificationOrientation.left);
-          expect(problem.backFaceColor).toBe(verificationOrientation.back);
-        }
+      it('should return false for incorrect answer', () => {
+        const problem = generateOrientationProblem('white');
+        const incorrectColor = COLORS.find(c => c !== problem.correctAnswer)!;
+        expect(checkAnswer(problem, incorrectColor)).toBe(false);
       });
     });
   }); 

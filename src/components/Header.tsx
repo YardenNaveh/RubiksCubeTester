@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Volume2, VolumeX } from 'lucide-react'; // Using lucide-react for icons
-import { CubeColor, COLORS } from '../logic/cubeConstants'; // Import COLORS
+import { COLORS } from '../logic/cubeConstants'; // Import COLORS
 import { BottomColorSetting } from '../hooks/useLocalStorage'; // Import setting type
 
 interface HeaderProps {

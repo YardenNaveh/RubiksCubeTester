@@ -2,9 +2,7 @@ import {
   CubeColor,
   COLORS,
   COLOR_PAIRS,
-  TargetRelation,
-  TARGET_RELATIONS,
-  ADJACENT_FACES
+  TargetRelation
 } from './cubeConstants';
 
 // --- Define standard face notation (used internally) ---
@@ -34,10 +32,10 @@ const STANDARD_FACE_COLORS: Record<Face, CubeColor> = {
   R: 'blue',  L: 'green',
 };
 
-// Inverse map: Color -> Standard Face
-const STANDARD_COLOR_TO_FACE = Object.fromEntries(
-    Object.entries(STANDARD_FACE_COLORS).map(([face, color]) => [color, face])
-) as Record<CubeColor, Face>; // Add type assertion
+// Commented out unused STANDARD_COLOR_TO_FACE
+// const STANDARD_COLOR_TO_FACE = Object.fromEntries(
+//     Object.entries(STANDARD_FACE_COLORS).map(([face, color]) => [color, face])
+// ) as Record<CubeColor, Face>; 
 
 // --- Define adjacencies between standard FACES ---
 const FACE_ADJACENCIES: Record<Face, Face[]> = {
@@ -55,48 +53,11 @@ function getRandomElement<T>(arr: T[]): T {
 }
 
 // --- Main Logic: Determine colors relative to a chosen bottom ---
-interface OrientationMap {
-    faceColors: Record<Face, CubeColor>; // Map from standard Face (U,F..) to actual Color
-    colorFaces: Record<CubeColor, Face>; // Map from actual Color to standard Face
-}
-
-function getOrientationMap(bottomColor: CubeColor): OrientationMap {
-    const bottomFace = STANDARD_COLOR_TO_FACE[bottomColor]; // e.g., if bottomColor='blue', bottomFace='R'
-    const topFace = STANDARD_COLOR_TO_FACE[COLOR_PAIRS[bottomColor]]; // e.g., topFace='L'
-
-    // We need a consistent way to determine Front/Back/Left/Right relative to the new Top/Bottom
-    // This essentially requires defining a rotation from the standard White=UP orientation.
-    
-    // --- Simplified Approach for V1.1 --- 
-    // Let's stick to the concept that White/Yellow, Blue/Green, Red/Orange are pairs.
-    // If Bottom is White (standard D), then U=Y, F=R, B=O, L=G, R=B.
-    // If Bottom is Blue (standard R), then Top is Green (standard L).
-    // How to find Front? Let's assume we keep White/Yellow axis fixed if possible.
-    // If Bottom=Blue(R), Top=Green(L). Keep White(U)/Yellow(D) as U/D? No, that violates adjacency.
-    // We need to rotate. Imagine rotating the cube so Blue is at the bottom.
-    // If Blue moves to D, then: R->D. Standard R neighbours are U,D,F,B.
-    // U(W)->F, D(Y)->B, F(R)->U(?), B(O)->D(?) - this mapping gets complex quickly.
-
-    // --- Revised Simplified Approach: Fixed Reference Frame --- 
-    // Keep the STANDARD_FACE_COLORS as the *absolute* reference.
-    // When generating a problem, pick a `bottomColor`. Calculate all face colors
-    // *relative* to that bottom color by finding the corresponding STANDARD face
-    // and using the standard adjacencies.
-    
-    // Example: bottomColor = blue. Standard face for blue is R.
-    // The face physically opposite blue is green (standard L).
-    // The faces adjacent to blue are white(U), yellow(D), red(F), orange(B).
-    // This doesn't directly give us the orientation map easily.
-
-    // === Let's use the original lookup approach BUT adapt it ===
-    // The lookup determined the UP color given FRONT and RIGHT colors, assuming White=UP.
-    // We can *adapt* this. Given two *reference colors* (ref1Color, ref2Color) and their *intended relative positions* 
-    // (e.g., ref1 is FRONT, ref2 is RIGHT), and a desired `bottomColor`, we can find the implied UP color.
-
-    // THIS FUNCTION BECOMES REDUNDANT with the new problem generation approach below.
-    // We'll calculate colors directly in generateOrientationProblem.
-    throw new Error("getOrientationMap is deprecated by the new approach.");
-}
+// Commented out unused OrientationMap interface
+// interface OrientationMap {
+//     faceColors: Record<Face, CubeColor>; // Map from standard Face (U,F..) to actual Color
+//     colorFaces: Record<CubeColor, Face>; // Map from actual Color to standard Face
+// }
 
 // --- New Problem Structure ---
 export interface OrientationProblem {

@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { CubeColor } from './logic/cubeConstants';
 
 function App() {
-  const [appData, setAppData, resetStats] = useAppStorage();
+  const [appData, setAppData, /* resetStats */] = useAppStorage();
 
   // Register the service worker
   useEffect(() => {

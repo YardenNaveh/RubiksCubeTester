@@ -1,7 +1,6 @@
 import React from 'react';
 import { CubeColor, TargetRelation } from '../logic/cubeConstants';
 import type { Face } from '../logic/orientation';
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'; // Use icons for arrow directions
 
 interface CubeProps {
   ref1Face: Face;
@@ -28,7 +27,7 @@ const faceBaseClasses = "absolute w-full h-full border border-black/50 flex item
 
 // Style for the target pattern overlay using background-image
 // Using repeating diagonal lines. Adjust color/angle/size as needed.
-const targetOverlayStyle = (faceColor: CubeColor): React.CSSProperties => {
+const targetOverlayStyle = (/* faceColor: CubeColor */): React.CSSProperties => { // Comment out unused faceColor param
     // Use the requested color #7e4dc1 with transparency
     const patternColor = 'rgba(126, 77, 193, 0.5)'; // #7e4dc1 with 0.5 alpha
     return {
@@ -37,7 +36,7 @@ const targetOverlayStyle = (faceColor: CubeColor): React.CSSProperties => {
     };
 };
 
-const Cube: React.FC<CubeProps> = ({ ref1Face, ref1Color, ref2Face, ref2Color, targetRelation, targetFace, showArrow }) => {
+const Cube: React.FC<CubeProps> = ({ ref1Face, ref1Color, ref2Face, ref2Color, /* targetRelation, */ targetFace, showArrow }) => { // Comment out unused targetRelation
   const cubeSize = 180; // Base size in px
   const perspective = 1000; // CSS perspective value
   const halfSize = cubeSize / 2;
@@ -61,7 +60,7 @@ const Cube: React.FC<CubeProps> = ({ ref1Face, ref1Color, ref2Face, ref2Color, t
           className={`${faceBaseClasses} ${ref1Face === 'F' ? colorClasses[ref1Color] : ref2Face === 'F' ? colorClasses[ref2Color] : ''}`}
           style={{ 
             transform: `translateZ(${halfSize}px)`, 
-            ...(targetFace === 'F' && showArrow ? targetOverlayStyle(ref1Face === 'F' ? ref1Color : ref2Face === 'F' ? ref2Color : 'white') : {}) 
+            ...(targetFace === 'F' && showArrow ? targetOverlayStyle() : {}) 
           }}
         ></div>
 
@@ -70,7 +69,7 @@ const Cube: React.FC<CubeProps> = ({ ref1Face, ref1Color, ref2Face, ref2Color, t
           className={`${faceBaseClasses} ${ref1Face === 'R' ? colorClasses[ref1Color] : ref2Face === 'R' ? colorClasses[ref2Color] : ''}`}
           style={{ 
             transform: `rotateY(90deg) translateZ(${halfSize}px)`, 
-            ...(targetFace === 'R' && showArrow ? targetOverlayStyle(ref1Face === 'R' ? ref1Color : ref2Face === 'R' ? ref2Color : 'white') : {}) 
+            ...(targetFace === 'R' && showArrow ? targetOverlayStyle() : {}) 
           }}
         ></div>
 
@@ -79,7 +78,7 @@ const Cube: React.FC<CubeProps> = ({ ref1Face, ref1Color, ref2Face, ref2Color, t
           className={`${faceBaseClasses} ${ref1Face === 'U' ? colorClasses[ref1Color] : ref2Face === 'U' ? colorClasses[ref2Color] : ''}`}
           style={{ 
             transform: `rotateX(90deg) translateZ(${halfSize}px)`,
-            ...(targetFace === 'U' && showArrow ? targetOverlayStyle(ref1Face === 'U' ? ref1Color : ref2Face === 'U' ? ref2Color : 'white') : {}) 
+            ...(targetFace === 'U' && showArrow ? targetOverlayStyle() : {}) 
           }}
         ></div>
         
@@ -88,7 +87,7 @@ const Cube: React.FC<CubeProps> = ({ ref1Face, ref1Color, ref2Face, ref2Color, t
           className={`${faceBaseClasses} ${ref1Face === 'L' ? colorClasses[ref1Color] : ref2Face === 'L' ? colorClasses[ref2Color] : ''}`}
           style={{ 
             transform: `rotateY(-90deg) translateZ(${halfSize}px)`, 
-            ...(targetFace === 'L' && showArrow ? targetOverlayStyle(ref1Face === 'L' ? ref1Color : ref2Face === 'L' ? ref2Color : 'white') : {}) 
+            ...(targetFace === 'L' && showArrow ? targetOverlayStyle() : {}) 
           }}
         ></div>
 
@@ -97,7 +96,7 @@ const Cube: React.FC<CubeProps> = ({ ref1Face, ref1Color, ref2Face, ref2Color, t
           className={`${faceBaseClasses} ${ref1Face === 'B' ? colorClasses[ref1Color] : ref2Face === 'B' ? colorClasses[ref2Color] : ''}`}
           style={{ 
             transform: `rotateY(180deg) translateZ(${halfSize}px)`,
-            ...(targetFace === 'B' && showArrow ? targetOverlayStyle(ref1Face === 'B' ? ref1Color : ref2Face === 'B' ? ref2Color : 'white') : {}) 
+            ...(targetFace === 'B' && showArrow ? targetOverlayStyle() : {}) 
           }}
         ></div>
 
@@ -106,7 +105,7 @@ const Cube: React.FC<CubeProps> = ({ ref1Face, ref1Color, ref2Face, ref2Color, t
           className={`${faceBaseClasses} ${ref1Face === 'D' ? colorClasses[ref1Color] : ref2Face === 'D' ? colorClasses[ref2Color] : ''}`}
           style={{ 
             transform: `rotateX(-90deg) translateZ(${halfSize}px)`,
-            ...(targetFace === 'D' && showArrow ? targetOverlayStyle(ref1Face === 'D' ? ref1Color : ref2Face === 'D' ? ref2Color : 'white') : {}) 
+            ...(targetFace === 'D' && showArrow ? targetOverlayStyle() : {}) 
           }}
         ></div>
       </div>
