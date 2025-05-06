@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AppStorage } from '../hooks/useLocalStorage';
-import { generateOrientationProblem, OrientationProblem, checkAnswer, Face } from '../logic/orientation';
+import { generateOrientationProblem, OrientationProblem, checkAnswer, Face, RELATION_TO_FACE_MAP } from '../logic/orientation';
 import { CubeColor, FACE_TO_RELATION_MAP } from '../logic/cubeConstants';
 import { useSound } from '../hooks/useSound';
 import Cube from '../components/Cube';
@@ -110,6 +110,9 @@ const DrillPage: React.FC<DrillPageProps> = ({ appData, setAppData }) => {
     return <div className="flex-grow flex items-center justify-center"><p>Loading...</p></div>;
   }
 
+  // Determine the target face identifier from the target relation
+  const targetFace = RELATION_TO_FACE_MAP[currentProblem.targetRelation];
+
   return (
     <div className="flex flex-col items-center justify-between flex-grow space-y-6">
        <p className="text-center text-slate-300">
@@ -125,6 +128,7 @@ const DrillPage: React.FC<DrillPageProps> = ({ appData, setAppData }) => {
         ref2Face={currentProblem.ref2Face}
         ref2Color={currentProblem.ref2Color}
         targetRelation={currentProblem.targetRelation}
+        targetFace={targetFace}
         showArrow={showArrow}
       />
       <AnswerPad

@@ -9,6 +9,7 @@ interface CubeProps {
   ref2Face: Face;
   ref2Color: CubeColor;
   targetRelation: TargetRelation;
+  targetFace: Face;
   showArrow: boolean; // Control arrow visibility
 }
 
@@ -22,25 +23,24 @@ const colorClasses: Record<CubeColor, string> = {
   orange: 'bg-orange-500',
 };
 
-// Map relation to arrow component and rotation
-const arrowMap: Record<TargetRelation, { Icon: React.ElementType, rotation: string, position?: string }> = {
-  up: { Icon: ArrowUp, rotation: 'rotate-0' },
-  down: { Icon: ArrowDown, rotation: 'rotate-0' },
-  left: { Icon: ArrowLeft, rotation: 'rotate-0' }, 
-  right: { Icon: ArrowRight, rotation: 'rotate-0' }, 
-  // Front/Back arrows are less intuitive in this projection, but keep placeholders
-  front: { Icon: ArrowRight, rotation: '-rotate-45' },
-  back: { Icon: ArrowLeft, rotation: 'rotate-[135deg]' }, 
+// Base Tailwind classes for a face div
+const faceBaseClasses = "absolute w-full h-full border border-black/50 flex items-center justify-center overflow-hidden"; // Added overflow-hidden
+
+// Style for the target pattern overlay using background-image
+// Using repeating diagonal lines. Adjust color/angle/size as needed.
+const targetOverlayStyle = (faceColor: CubeColor): React.CSSProperties => {
+    // Use the requested color #7e4dc1 with transparency
+    const patternColor = 'rgba(126, 77, 193, 0.5)'; // #7e4dc1 with 0.5 alpha
+    return {
+        backgroundImage: `repeating-linear-gradient(-45deg, ${patternColor}, ${patternColor} 4px, transparent 4px, transparent 10px)`,
+        backgroundSize: '14px 14px' // Controls density
+    };
 };
 
-const Cube: React.FC<CubeProps> = ({ ref1Face, ref1Color, ref2Face, ref2Color, targetRelation, showArrow }) => {
+const Cube: React.FC<CubeProps> = ({ ref1Face, ref1Color, ref2Face, ref2Color, targetRelation, targetFace, showArrow }) => {
   const cubeSize = 180; // Base size in px
   const perspective = 1000; // CSS perspective value
   const halfSize = cubeSize / 2;
-  const faceBaseClasses = "absolute w-full h-full border border-black/50"; // Base classes for all faces
-
-  const ArrowComponent = arrowMap[targetRelation]?.Icon;
-  const arrowRotation = arrowMap[targetRelation]?.rotation || 'rotate-0';
 
   return (
     <div
@@ -59,51 +59,57 @@ const Cube: React.FC<CubeProps> = ({ ref1Face, ref1Color, ref2Face, ref2Color, t
         {/* Front Face */}
         <div
           className={`${faceBaseClasses} ${ref1Face === 'F' ? colorClasses[ref1Color] : ref2Face === 'F' ? colorClasses[ref2Color] : ''}`}
-          style={{ transform: `translateZ(${halfSize}px)` }}
+          style={{ 
+            transform: `translateZ(${halfSize}px)`, 
+            ...(targetFace === 'F' && showArrow ? targetOverlayStyle(ref1Face === 'F' ? ref1Color : ref2Face === 'F' ? ref2Color : 'white') : {}) 
+          }}
         ></div>
 
         {/* Right Face */}
         <div
           className={`${faceBaseClasses} ${ref1Face === 'R' ? colorClasses[ref1Color] : ref2Face === 'R' ? colorClasses[ref2Color] : ''}`}
-          style={{ transform: `rotateY(90deg) translateZ(${halfSize}px)` }}
+          style={{ 
+            transform: `rotateY(90deg) translateZ(${halfSize}px)`, 
+            ...(targetFace === 'R' && showArrow ? targetOverlayStyle(ref1Face === 'R' ? ref1Color : ref2Face === 'R' ? ref2Color : 'white') : {}) 
+          }}
         ></div>
 
         {/* Top Face */}
         <div
           className={`${faceBaseClasses} ${ref1Face === 'U' ? colorClasses[ref1Color] : ref2Face === 'U' ? colorClasses[ref2Color] : ''}`}
-          style={{ transform: `rotateX(90deg) translateZ(${halfSize}px)` }}
+          style={{ 
+            transform: `rotateX(90deg) translateZ(${halfSize}px)`,
+            ...(targetFace === 'U' && showArrow ? targetOverlayStyle(ref1Face === 'U' ? ref1Color : ref2Face === 'U' ? ref2Color : 'white') : {}) 
+          }}
         ></div>
         
         {/* Left Face */}
         <div
           className={`${faceBaseClasses} ${ref1Face === 'L' ? colorClasses[ref1Color] : ref2Face === 'L' ? colorClasses[ref2Color] : ''}`}
-          style={{ transform: `rotateY(-90deg) translateZ(${halfSize}px)` }}
+          style={{ 
+            transform: `rotateY(-90deg) translateZ(${halfSize}px)`, 
+            ...(targetFace === 'L' && showArrow ? targetOverlayStyle(ref1Face === 'L' ? ref1Color : ref2Face === 'L' ? ref2Color : 'white') : {}) 
+          }}
         ></div>
 
         {/* Back Face */}
         <div
           className={`${faceBaseClasses} ${ref1Face === 'B' ? colorClasses[ref1Color] : ref2Face === 'B' ? colorClasses[ref2Color] : ''}`}
-          style={{ transform: `rotateY(180deg) translateZ(${halfSize}px)` }}
+          style={{ 
+            transform: `rotateY(180deg) translateZ(${halfSize}px)`,
+            ...(targetFace === 'B' && showArrow ? targetOverlayStyle(ref1Face === 'B' ? ref1Color : ref2Face === 'B' ? ref2Color : 'white') : {}) 
+          }}
         ></div>
 
         {/* Bottom Face */}
         <div
           className={`${faceBaseClasses} ${ref1Face === 'D' ? colorClasses[ref1Color] : ref2Face === 'D' ? colorClasses[ref2Color] : ''}`}
-          style={{ transform: `rotateX(-90deg) translateZ(${halfSize}px)` }}
+          style={{ 
+            transform: `rotateX(-90deg) translateZ(${halfSize}px)`,
+            ...(targetFace === 'D' && showArrow ? targetOverlayStyle(ref1Face === 'D' ? ref1Color : ref2Face === 'D' ? ref2Color : 'white') : {}) 
+          }}
         ></div>
       </div>
-
-      {/* Arrow Overlay */}
-      {ArrowComponent && (
-        <div
-          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ease-in-out ${showArrow ? 'opacity-100' : 'opacity-0'}`}
-          style={{ transform: 'translateZ(1px)' }} // Bring arrow slightly in front of faces
-        >
-          <div className={`transform ${arrowRotation}`}> 
-            <ArrowComponent size={cubeSize * 0.4} className="text-black opacity-75 drop-shadow-lg" />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

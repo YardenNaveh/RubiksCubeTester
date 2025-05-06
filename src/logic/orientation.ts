@@ -14,7 +14,7 @@ const FACES: Face[] = ['U', 'D', 'F', 'B', 'L', 'R'];
 // --- Map TargetRelation to Face (relative concept) ---
 // We assume a view where you look at the FRONT face,
 // UP is towards the U face, RIGHT is towards the R face etc.
-const RELATION_TO_FACE_MAP: Record<TargetRelation, Face> = {
+export const RELATION_TO_FACE_MAP: Record<TargetRelation, Face> = {
   up: 'U',
   down: 'D',
   left: 'L',
@@ -116,82 +116,88 @@ export interface OrientationProblem {
 function determineOrientationColors(bottomColor: CubeColor): Record<Face, CubeColor> {
     const actualFaceColors: Partial<Record<Face, CubeColor>> = {};
     
-    // Simplified rotation mappings based on desired bottom color
+    // Reinstate switch statement
     switch(bottomColor) {
-        case 'white': // U -> D - Special handling for randomized front
+        case 'white': // D=White, U=Yellow. Random F.
             actualFaceColors['U'] = 'yellow'; 
             actualFaceColors['D'] = 'white'; 
-
-            // Randomize Front face color among sides
-            const sideColors: CubeColor[] = ['red', 'orange', 'blue', 'green'];
-            const frontColor = getRandomElement(sideColors);
-            actualFaceColors['F'] = frontColor;
-
-            // Determine R, B, L based on U=Yellow and chosen F
-            // Corrected adjacencies for U=Yellow, D=White:
-            // If F=Red -> R=Green, B=Orange, L=Blue
-            // If F=Orange -> R=Blue, B=Red, L=Green
-            // If F=Blue -> R=Red, B=Green, L=Orange
-            // If F=Green -> R=Orange, B=Blue, L=Red
-            switch(frontColor){
-                case 'red':
-                    actualFaceColors['R'] = 'green';
-                    actualFaceColors['B'] = 'orange';
-                    actualFaceColors['L'] = 'blue';
-                    break;
-                case 'blue':
-                    actualFaceColors['R'] = 'red';
-                    actualFaceColors['B'] = 'green';
-                    actualFaceColors['L'] = 'orange';
-                    break;
-                case 'orange':
-                    actualFaceColors['R'] = 'blue';
-                    actualFaceColors['B'] = 'red';
-                    actualFaceColors['L'] = 'green';
-                    break;
-                case 'green':
-                    actualFaceColors['R'] = 'orange';
-                    actualFaceColors['B'] = 'blue';
-                    actualFaceColors['L'] = 'red';
-                    break;
+            const sideColorsW: CubeColor[] = ['red', 'orange', 'blue', 'green'];
+            const frontColorW = getRandomElement(sideColorsW);
+            actualFaceColors['F'] = frontColorW;
+            // Adjacencies for U=Yellow
+            switch(frontColorW){
+                case 'red':    actualFaceColors['R'] = 'green';  actualFaceColors['B'] = 'orange'; actualFaceColors['L'] = 'blue'; break;
+                case 'green':  actualFaceColors['R'] = 'orange'; actualFaceColors['B'] = 'blue';   actualFaceColors['L'] = 'red'; break;
+                case 'orange': actualFaceColors['R'] = 'blue';   actualFaceColors['B'] = 'red';    actualFaceColors['L'] = 'green'; break;
+                case 'blue':   actualFaceColors['R'] = 'red';    actualFaceColors['B'] = 'green';  actualFaceColors['L'] = 'orange'; break;
             }
             break;
-        case 'yellow': // D -> D (Standard)
+
+        case 'yellow': // D=Yellow, U=White (Standard)
             Object.assign(actualFaceColors, STANDARD_FACE_COLORS);
             break;
-        case 'red': // F -> D 
-            actualFaceColors['U'] = STANDARD_FACE_COLORS['B']; // Orange (Opposite of Red)
-            actualFaceColors['D'] = STANDARD_FACE_COLORS['F']; // Red (Bottom color)
-            actualFaceColors['F'] = STANDARD_FACE_COLORS['D']; // Yellow
-            actualFaceColors['B'] = STANDARD_FACE_COLORS['U']; // White
-            actualFaceColors['L'] = STANDARD_FACE_COLORS['L']; // Green
-            actualFaceColors['R'] = STANDARD_FACE_COLORS['R']; // Blue
+
+        case 'red': // D=Red, U=Orange. Random F.
+            actualFaceColors['U'] = 'orange';
+            actualFaceColors['D'] = 'red';
+            const sideColorsR: CubeColor[] = ['white', 'yellow', 'blue', 'green'];
+            const frontColorR = getRandomElement(sideColorsR);
+            actualFaceColors['F'] = frontColorR;
+            // Adjacencies for U=Orange (Opposite of U=Red)
+            switch(frontColorR){
+                case 'white':  actualFaceColors['R'] = 'green'; actualFaceColors['B'] = 'yellow'; actualFaceColors['L'] = 'blue'; break;
+                case 'green':  actualFaceColors['R'] = 'yellow'; actualFaceColors['B'] = 'blue'; actualFaceColors['L'] = 'white'; break;
+                case 'yellow': actualFaceColors['R'] = 'blue'; actualFaceColors['B'] = 'white'; actualFaceColors['L'] = 'green'; break;
+                case 'blue':   actualFaceColors['R'] = 'white'; actualFaceColors['B'] = 'green'; actualFaceColors['L'] = 'yellow'; break;
+            }
             break;
-        case 'orange': // B -> D
-            actualFaceColors['U'] = STANDARD_FACE_COLORS['F']; // Red (Opposite of Orange)
-            actualFaceColors['D'] = STANDARD_FACE_COLORS['B']; // Orange (Bottom color)
-            actualFaceColors['F'] = STANDARD_FACE_COLORS['U']; // White
-            actualFaceColors['B'] = STANDARD_FACE_COLORS['D']; // Yellow
-            actualFaceColors['L'] = STANDARD_FACE_COLORS['L']; // Green
-            actualFaceColors['R'] = STANDARD_FACE_COLORS['R']; // Blue
+
+        case 'orange': // D=Orange, U=Red. Random F.
+            actualFaceColors['U'] = 'red';
+            actualFaceColors['D'] = 'orange';
+            const sideColorsO: CubeColor[] = ['white', 'yellow', 'blue', 'green'];
+            const frontColorO = getRandomElement(sideColorsO);
+            actualFaceColors['F'] = frontColorO;
+            // Adjacencies for U=Red (Opposite of U=Orange)
+            switch(frontColorO){
+                case 'white':  actualFaceColors['R'] = 'blue'; actualFaceColors['B'] = 'yellow'; actualFaceColors['L'] = 'green'; break;
+                case 'blue':   actualFaceColors['R'] = 'yellow'; actualFaceColors['B'] = 'green'; actualFaceColors['L'] = 'white'; break;
+                case 'yellow': actualFaceColors['R'] = 'green'; actualFaceColors['B'] = 'white'; actualFaceColors['L'] = 'blue'; break;
+                case 'green':  actualFaceColors['R'] = 'white'; actualFaceColors['B'] = 'blue'; actualFaceColors['L'] = 'yellow'; break;
+            }
             break;
-         case 'blue': // R -> D
-            actualFaceColors['U'] = STANDARD_FACE_COLORS['L']; // Green (Opposite of Blue)
-            actualFaceColors['D'] = STANDARD_FACE_COLORS['R']; // Blue (Bottom color)
-            actualFaceColors['F'] = STANDARD_FACE_COLORS['L']; // Green
-            actualFaceColors['B'] = STANDARD_FACE_COLORS['R']; // Blue
-            actualFaceColors['L'] = STANDARD_FACE_COLORS['D']; // Yellow
-            actualFaceColors['R'] = STANDARD_FACE_COLORS['U']; // White
-            break;
-        case 'green': // L -> D
-            actualFaceColors['U'] = STANDARD_FACE_COLORS['R']; // Blue (Opposite of Green)
-            actualFaceColors['D'] = STANDARD_FACE_COLORS['L']; // Green (Bottom color)
-            actualFaceColors['F'] = STANDARD_FACE_COLORS['R']; // Blue
-            actualFaceColors['B'] = STANDARD_FACE_COLORS['L']; // Green
-            actualFaceColors['L'] = STANDARD_FACE_COLORS['U']; // White
-            actualFaceColors['R'] = STANDARD_FACE_COLORS['D']; // Yellow
+
+         case 'blue': // D=Blue, U=Green. Random F.
+             actualFaceColors['U'] = 'green';
+             actualFaceColors['D'] = 'blue';
+             const sideColorsB: CubeColor[] = ['white', 'yellow', 'red', 'orange'];
+             const frontColorB = getRandomElement(sideColorsB);
+             actualFaceColors['F'] = frontColorB;
+             // Adjacencies for U=Green (Opposite of U=Blue)
+             switch(frontColorB){
+                 case 'white':  actualFaceColors['R'] = 'red'; actualFaceColors['B'] = 'yellow'; actualFaceColors['L'] = 'orange'; break;
+                 case 'red':    actualFaceColors['R'] = 'yellow'; actualFaceColors['B'] = 'orange'; actualFaceColors['L'] = 'white'; break;
+                 case 'yellow': actualFaceColors['R'] = 'orange'; actualFaceColors['B'] = 'white'; actualFaceColors['L'] = 'red'; break;
+                 case 'orange': actualFaceColors['R'] = 'white'; actualFaceColors['B'] = 'red'; actualFaceColors['L'] = 'yellow'; break;
+             }
+             break;
+
+        case 'green': // D=Green, U=Blue. Random F.
+            actualFaceColors['U'] = 'blue';
+            actualFaceColors['D'] = 'green';
+            const sideColorsG: CubeColor[] = ['white', 'yellow', 'red', 'orange'];
+            const frontColorG = getRandomElement(sideColorsG);
+            actualFaceColors['F'] = frontColorG;
+            // Adjacencies for U=Blue (Opposite of U=Green)
+            switch(frontColorG){
+                case 'white':  actualFaceColors['R'] = 'orange'; actualFaceColors['B'] = 'yellow'; actualFaceColors['L'] = 'red'; break;
+                case 'orange': actualFaceColors['R'] = 'yellow'; actualFaceColors['B'] = 'red'; actualFaceColors['L'] = 'white'; break;
+                case 'yellow': actualFaceColors['R'] = 'red'; actualFaceColors['B'] = 'white'; actualFaceColors['L'] = 'orange'; break;
+                case 'red':    actualFaceColors['R'] = 'white'; actualFaceColors['B'] = 'orange'; actualFaceColors['L'] = 'yellow'; break;
+            }
             break;
     }
+
     return actualFaceColors as Record<Face, CubeColor>;
 }
 
@@ -207,28 +213,20 @@ export function generateOrientationProblem(bottomColorSetting: CubeColor | 'rand
   let ref2Face: Face;
   const sideFaces: Face[] = ['F', 'R', 'B', 'L'];
 
-  if (fixedBottom && actualBottom === 'white') {
-    // Special case: White bottom, random front. Ref1=D, Ref2=random side.
+  if (fixedBottom) { // Applies to ALL fixed bottoms now
     ref1Face = 'D';
-    ref2Face = getRandomElement(sideFaces);
-  } else if (fixedBottom) {
-    // Other fixed bottom: Ref1=D, Ref2=random adjacent standard face
-    ref1Face = 'D';
-    // Get standard faces adjacent to the standard face of the bottom color
-    const stdBottomFace = STANDARD_COLOR_TO_FACE[actualBottom];
-    ref2Face = getRandomElement(FACE_ADJACENCIES[stdBottomFace]);
+    ref2Face = getRandomElement(sideFaces); // Ref2 is always a side face
   } else {
     // Random bottom: Pick two distinct random faces as refs
     ref1Face = getRandomElement(FACES);
     const possibleRef2 = FACE_ADJACENCIES[ref1Face].filter(adjFace => {
+      // Ensure ref2 is not opposite ref1 based on the actual colors
       const actualColorOnAdj = faceColors[adjFace];
-      const stdFaceOfActual = STANDARD_COLOR_TO_FACE[actualColorOnAdj];
-      const stdOppositeOfRef1 = STANDARD_COLOR_TO_FACE[COLOR_PAIRS[faceColors[ref1Face]]];
-      return stdFaceOfActual !== stdOppositeOfRef1;
+      return actualColorOnAdj !== COLOR_PAIRS[faceColors[ref1Face]]; 
     });
-    if (possibleRef2.length === 0) {
-      console.warn("Could not find non-opposite adjacent face, picking random adjacent.");
-      possibleRef2.push(...FACE_ADJACENCIES[ref1Face]);
+    if (possibleRef2.length === 0) { 
+        console.warn("Could not find non-opposite adjacent face, picking random adjacent.");
+        possibleRef2.push(...FACE_ADJACENCIES[ref1Face]); 
     }
     ref2Face = getRandomElement(possibleRef2);
   }
@@ -238,11 +236,11 @@ export function generateOrientationProblem(bottomColorSetting: CubeColor | 'rand
 
   // Pick a target face
   let targetFace: Face;
-  if (fixedBottom && actualBottom === 'white') {
-    // White bottom: Target must be a side face different from ref2
+  if (fixedBottom) { // Applies to ALL fixed bottoms
+    // Target must be a side face different from ref2
     targetFace = getRandomElement(sideFaces.filter(f => f !== ref2Face));
   } else {
-    // Other cases: Target is any face different from ref1 and ref2
+    // Random bottom: Target is any face different from ref1 and ref2
     targetFace = getRandomElement(FACES.filter(f => f !== ref1Face && f !== ref2Face));
   }
 
