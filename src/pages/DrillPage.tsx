@@ -120,7 +120,10 @@ const DrillPage: React.FC<DrillPageProps> = ({ appData, setAppData }) => {
        </p>
 
       <Cube
-        faceColors={currentProblem.faceColors}
+        ref1Face={currentProblem.ref1Face}
+        ref1Color={currentProblem.ref1Color}
+        ref2Face={currentProblem.ref2Face}
+        ref2Color={currentProblem.ref2Color}
         targetRelation={currentProblem.targetRelation}
         showArrow={showArrow}
       />

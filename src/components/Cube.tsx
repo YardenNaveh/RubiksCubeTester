@@ -4,7 +4,10 @@ import type { Face } from '../logic/orientation';
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'; // Use icons for arrow directions
 
 interface CubeProps {
-  faceColors: Record<Face, CubeColor>;
+  ref1Face: Face;
+  ref1Color: CubeColor;
+  ref2Face: Face;
+  ref2Color: CubeColor;
   targetRelation: TargetRelation;
   showArrow: boolean; // Control arrow visibility
 }
@@ -30,7 +33,7 @@ const arrowMap: Record<TargetRelation, { Icon: React.ElementType, rotation: stri
   back: { Icon: ArrowLeft, rotation: 'rotate-[135deg]' }, 
 };
 
-const Cube: React.FC<CubeProps> = ({ faceColors, targetRelation, showArrow }) => {
+const Cube: React.FC<CubeProps> = ({ ref1Face, ref1Color, ref2Face, ref2Color, targetRelation, showArrow }) => {
   const cubeSize = 180; // Base size in px
   const perspective = 1000; // CSS perspective value
   const halfSize = cubeSize / 2;
@@ -51,42 +54,42 @@ const Cube: React.FC<CubeProps> = ({ faceColors, targetRelation, showArrow }) =>
       {/* Cube container for 3D transforms */}
       <div
         className="relative w-full h-full"
-        style={{ transformStyle: 'preserve-3d', transform: 'rotateX(-25deg) rotateY(45deg)' }} // Isometric view angle
+        style={{ transformStyle: 'preserve-3d', transform: 'rotateX(-25deg) rotateY(45deg)' }} // Restore standard Isometric view angle
       >
         {/* Front Face */}
         <div
-          className={`${faceBaseClasses} ${colorClasses[faceColors['F']]}`}
+          className={`${faceBaseClasses} ${ref1Face === 'F' ? colorClasses[ref1Color] : ref2Face === 'F' ? colorClasses[ref2Color] : ''}`}
           style={{ transform: `translateZ(${halfSize}px)` }}
         ></div>
 
         {/* Right Face */}
         <div
-          className={`${faceBaseClasses} ${colorClasses[faceColors['R']]}`}
+          className={`${faceBaseClasses} ${ref1Face === 'R' ? colorClasses[ref1Color] : ref2Face === 'R' ? colorClasses[ref2Color] : ''}`}
           style={{ transform: `rotateY(90deg) translateZ(${halfSize}px)` }}
         ></div>
 
         {/* Top Face */}
         <div
-          className={`${faceBaseClasses} ${colorClasses[faceColors['U']]}`}
-          style={{ transform: `rotateX(-90deg) translateZ(${halfSize}px)` }}
+          className={`${faceBaseClasses} ${ref1Face === 'U' ? colorClasses[ref1Color] : ref2Face === 'U' ? colorClasses[ref2Color] : ''}`}
+          style={{ transform: `rotateX(90deg) translateZ(${halfSize}px)` }}
         ></div>
         
         {/* Left Face */}
         <div
-          className={`${faceBaseClasses} ${colorClasses[faceColors['L']]}`}
+          className={`${faceBaseClasses} ${ref1Face === 'L' ? colorClasses[ref1Color] : ref2Face === 'L' ? colorClasses[ref2Color] : ''}`}
           style={{ transform: `rotateY(-90deg) translateZ(${halfSize}px)` }}
         ></div>
 
         {/* Back Face */}
         <div
-          className={`${faceBaseClasses} ${colorClasses[faceColors['B']]}`}
+          className={`${faceBaseClasses} ${ref1Face === 'B' ? colorClasses[ref1Color] : ref2Face === 'B' ? colorClasses[ref2Color] : ''}`}
           style={{ transform: `rotateY(180deg) translateZ(${halfSize}px)` }}
         ></div>
 
         {/* Bottom Face */}
         <div
-          className={`${faceBaseClasses} ${colorClasses[faceColors['D']]}`}
-          style={{ transform: `rotateX(90deg) translateZ(${halfSize}px)` }}
+          className={`${faceBaseClasses} ${ref1Face === 'D' ? colorClasses[ref1Color] : ref2Face === 'D' ? colorClasses[ref2Color] : ''}`}
+          style={{ transform: `rotateX(-90deg) translateZ(${halfSize}px)` }}
         ></div>
       </div>
 

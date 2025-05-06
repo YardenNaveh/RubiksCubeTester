@@ -128,32 +128,31 @@ function determineOrientationColors(bottomColor: CubeColor): Record<Face, CubeCo
             actualFaceColors['F'] = frontColor;
 
             // Determine R, B, L based on U=Yellow and chosen F
-            // Standard adjacencies: U=White neighbors are F=Red, B=Orange, R=Blue, L=Green
-            // If U=Yellow, the relative positions are maintained but colors are opposites
-            // If F=Red (Standard), R=Blue, B=Orange, L=Green
-            // If F=Blue, R=Orange, B=Green, L=Red
-            // If F=Orange, R=Green, B=Red, L=Blue
-            // If F=Green, R=Red, B=Blue, L=Orange
+            // Corrected adjacencies for U=Yellow, D=White:
+            // If F=Red -> R=Green, B=Orange, L=Blue
+            // If F=Orange -> R=Blue, B=Red, L=Green
+            // If F=Blue -> R=Red, B=Green, L=Orange
+            // If F=Green -> R=Orange, B=Blue, L=Red
             switch(frontColor){
                 case 'red':
-                    actualFaceColors['R'] = 'blue';
-                    actualFaceColors['B'] = 'orange';
-                    actualFaceColors['L'] = 'green';
-                    break;
-                case 'blue':
-                    actualFaceColors['R'] = 'orange';
-                    actualFaceColors['B'] = 'green';
-                    actualFaceColors['L'] = 'red';
-                    break;
-                case 'orange':
                     actualFaceColors['R'] = 'green';
-                    actualFaceColors['B'] = 'red';
+                    actualFaceColors['B'] = 'orange';
                     actualFaceColors['L'] = 'blue';
                     break;
-                case 'green':
+                case 'blue':
                     actualFaceColors['R'] = 'red';
-                    actualFaceColors['B'] = 'blue';
+                    actualFaceColors['B'] = 'green';
                     actualFaceColors['L'] = 'orange';
+                    break;
+                case 'orange':
+                    actualFaceColors['R'] = 'blue';
+                    actualFaceColors['B'] = 'red';
+                    actualFaceColors['L'] = 'green';
+                    break;
+                case 'green':
+                    actualFaceColors['R'] = 'orange';
+                    actualFaceColors['B'] = 'blue';
+                    actualFaceColors['L'] = 'red';
                     break;
             }
             break;
@@ -161,32 +160,32 @@ function determineOrientationColors(bottomColor: CubeColor): Record<Face, CubeCo
             Object.assign(actualFaceColors, STANDARD_FACE_COLORS);
             break;
         case 'red': // F -> D 
-            actualFaceColors['U'] = STANDARD_FACE_COLORS['F']; // Red 
-            actualFaceColors['D'] = STANDARD_FACE_COLORS['B']; // Orange
+            actualFaceColors['U'] = STANDARD_FACE_COLORS['B']; // Orange (Opposite of Red)
+            actualFaceColors['D'] = STANDARD_FACE_COLORS['F']; // Red (Bottom color)
             actualFaceColors['F'] = STANDARD_FACE_COLORS['D']; // Yellow
             actualFaceColors['B'] = STANDARD_FACE_COLORS['U']; // White
             actualFaceColors['L'] = STANDARD_FACE_COLORS['L']; // Green
             actualFaceColors['R'] = STANDARD_FACE_COLORS['R']; // Blue
             break;
         case 'orange': // B -> D
-            actualFaceColors['U'] = STANDARD_FACE_COLORS['B']; // Orange
-            actualFaceColors['D'] = STANDARD_FACE_COLORS['F']; // Red
+            actualFaceColors['U'] = STANDARD_FACE_COLORS['F']; // Red (Opposite of Orange)
+            actualFaceColors['D'] = STANDARD_FACE_COLORS['B']; // Orange (Bottom color)
             actualFaceColors['F'] = STANDARD_FACE_COLORS['U']; // White
             actualFaceColors['B'] = STANDARD_FACE_COLORS['D']; // Yellow
             actualFaceColors['L'] = STANDARD_FACE_COLORS['L']; // Green
             actualFaceColors['R'] = STANDARD_FACE_COLORS['R']; // Blue
             break;
          case 'blue': // R -> D
-            actualFaceColors['U'] = STANDARD_FACE_COLORS['F']; // Red 
-            actualFaceColors['D'] = STANDARD_FACE_COLORS['B']; // Orange
+            actualFaceColors['U'] = STANDARD_FACE_COLORS['L']; // Green (Opposite of Blue)
+            actualFaceColors['D'] = STANDARD_FACE_COLORS['R']; // Blue (Bottom color)
             actualFaceColors['F'] = STANDARD_FACE_COLORS['L']; // Green
             actualFaceColors['B'] = STANDARD_FACE_COLORS['R']; // Blue
             actualFaceColors['L'] = STANDARD_FACE_COLORS['D']; // Yellow
             actualFaceColors['R'] = STANDARD_FACE_COLORS['U']; // White
             break;
         case 'green': // L -> D
-            actualFaceColors['U'] = STANDARD_FACE_COLORS['F']; // Red
-            actualFaceColors['D'] = STANDARD_FACE_COLORS['B']; // Orange
+            actualFaceColors['U'] = STANDARD_FACE_COLORS['R']; // Blue (Opposite of Green)
+            actualFaceColors['D'] = STANDARD_FACE_COLORS['L']; // Green (Bottom color)
             actualFaceColors['F'] = STANDARD_FACE_COLORS['R']; // Blue
             actualFaceColors['B'] = STANDARD_FACE_COLORS['L']; // Green
             actualFaceColors['L'] = STANDARD_FACE_COLORS['U']; // White
