@@ -1,10 +1,10 @@
 import React from 'react';
 import { CubeColor, TargetRelation } from '../logic/cubeConstants';
+import type { Face } from '../logic/orientation';
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'; // Use icons for arrow directions
 
 interface CubeProps {
-  frontFaceColor: CubeColor;
-  rightFaceColor: CubeColor;
+  faceColors: Record<Face, CubeColor>;
   targetRelation: TargetRelation;
   showArrow: boolean; // Control arrow visibility
 }
@@ -30,7 +30,7 @@ const arrowMap: Record<TargetRelation, { Icon: React.ElementType, rotation: stri
   back: { Icon: ArrowLeft, rotation: 'rotate-[135deg]' }, 
 };
 
-const Cube: React.FC<CubeProps> = ({ frontFaceColor, rightFaceColor, targetRelation, showArrow }) => {
+const Cube: React.FC<CubeProps> = ({ faceColors, targetRelation, showArrow }) => {
   const cubeSize = 180; // Base size in px
   const perspective = 1000; // CSS perspective value
   const halfSize = cubeSize / 2;
@@ -53,39 +53,39 @@ const Cube: React.FC<CubeProps> = ({ frontFaceColor, rightFaceColor, targetRelat
         className="relative w-full h-full"
         style={{ transformStyle: 'preserve-3d', transform: 'rotateX(-25deg) rotateY(45deg)' }} // Isometric view angle
       >
-        {/* Front Face (Colored) */}
+        {/* Front Face */}
         <div
-          className={`${faceBaseClasses} ${colorClasses[frontFaceColor]}`}
+          className={`${faceBaseClasses} ${colorClasses[faceColors['F']]}`}
           style={{ transform: `translateZ(${halfSize}px)` }}
         ></div>
 
-        {/* Right Face (Colored) */}
+        {/* Right Face */}
         <div
-          className={`${faceBaseClasses} ${colorClasses[rightFaceColor]}`}
+          className={`${faceBaseClasses} ${colorClasses[faceColors['R']]}`}
           style={{ transform: `rotateY(90deg) translateZ(${halfSize}px)` }}
         ></div>
 
-        {/* Top Face (Wireframe) */}
+        {/* Top Face */}
         <div
-          className={`${faceBaseClasses}`}
+          className={`${faceBaseClasses} ${colorClasses[faceColors['U']]}`}
           style={{ transform: `rotateX(-90deg) translateZ(${halfSize}px)` }}
         ></div>
         
-        {/* Left Face (Wireframe) */}
+        {/* Left Face */}
         <div
-          className={`${faceBaseClasses}`}
+          className={`${faceBaseClasses} ${colorClasses[faceColors['L']]}`}
           style={{ transform: `rotateY(-90deg) translateZ(${halfSize}px)` }}
         ></div>
 
-        {/* Back Face (Wireframe) */}
+        {/* Back Face */}
         <div
-          className={`${faceBaseClasses}`}
+          className={`${faceBaseClasses} ${colorClasses[faceColors['B']]}`}
           style={{ transform: `rotateY(180deg) translateZ(${halfSize}px)` }}
         ></div>
 
-        {/* Bottom Face (Wireframe) */}
+        {/* Bottom Face */}
         <div
-          className={`${faceBaseClasses}`}
+          className={`${faceBaseClasses} ${colorClasses[faceColors['D']]}`}
           style={{ transform: `rotateX(90deg) translateZ(${halfSize}px)` }}
         ></div>
       </div>

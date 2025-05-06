@@ -110,18 +110,6 @@ const DrillPage: React.FC<DrillPageProps> = ({ appData, setAppData }) => {
     return <div className="flex-grow flex items-center justify-center"><p>Loading...</p></div>;
   }
 
-  // Determine which colors to pass to the Cube component based on the reference faces
-  const viewFrontColor = currentProblem.ref1Face === 'F'
-    ? currentProblem.ref1Color
-    : currentProblem.ref2Face === 'F'
-      ? currentProblem.ref2Color
-      : currentProblem.ref1Color; // Fallback
-  const viewRightColor = currentProblem.ref1Face === 'R'
-    ? currentProblem.ref1Color
-    : currentProblem.ref2Face === 'R'
-      ? currentProblem.ref2Color
-      : currentProblem.ref2Color; // Fallback
-
   return (
     <div className="flex flex-col items-center justify-between flex-grow space-y-6">
        <p className="text-center text-slate-300">
@@ -132,8 +120,7 @@ const DrillPage: React.FC<DrillPageProps> = ({ appData, setAppData }) => {
        </p>
 
       <Cube
-        frontFaceColor={viewFrontColor}
-        rightFaceColor={viewRightColor}
+        faceColors={currentProblem.faceColors}
         targetRelation={currentProblem.targetRelation}
         showArrow={showArrow}
       />
