@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import DrillPage from './pages/DrillPage';
 import StatsPage from './pages/StatsPage';
+import F2LNinjaPage from './pages/F2LNinjaPage';
 import { useAppStorage } from './hooks/useLocalStorage';
 import Header from './components/Header';
 import { useEffect } from 'react';
@@ -52,10 +53,11 @@ function App() {
           />
           <main className="flex-grow flex flex-col p-4">
             <Routes>
-              <Route path="/" element={<DrillPage appData={appData} setAppData={setAppData} />} />
+              <Route path="/" element={<Navigate to="/color-sensei" replace />} />
+              <Route path="/color-sensei" element={<DrillPage appData={appData} setAppData={setAppData} />} />
+              <Route path="/f2l-ninja" element={<F2LNinjaPage />} />
               <Route path="/stats" element={<StatsPage appData={appData} setAppData={setAppData} />} />
-              {/* Add a simple 404 or redirect? For now, defaults to DrillPage if no match */}
-              <Route path="*" element={<DrillPage appData={appData} setAppData={setAppData} />} />
+              <Route path="*" element={<Navigate to="/color-sensei" replace />} />
             </Routes>
           </main>
           {/* Footer links - adjust color */}
