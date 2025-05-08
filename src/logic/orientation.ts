@@ -71,92 +71,90 @@ export interface OrientationProblem {
     bottomColor: CubeColor; // The setting used
 }
 
-// --- Determine face colors based on the desired bottom color --- 
+// Helper to determine R, B, L colors based on known U and F colors
+function getSideColors(upColor: CubeColor, frontColor: CubeColor): { R: CubeColor; B: CubeColor; L: CubeColor } {
+    // Adjacency map: Given U, F -> find R, B, L
+    // Derived from standard cube rotations
+    const adj: Partial<Record<CubeColor, Partial<Record<CubeColor, { R: CubeColor; B: CubeColor; L: CubeColor }>>>> = {
+        white: { // U = White
+            red:    { R: 'blue',   B: 'orange', L: 'green' },
+            blue:   { R: 'orange', B: 'green',  L: 'red' },
+            orange: { R: 'green',  B: 'red',    L: 'blue' },
+            green:  { R: 'red',    B: 'blue',   L: 'orange' },
+        },
+        yellow: { // U = Yellow
+            red:    { R: 'green',  B: 'orange', L: 'blue' },
+            green:  { R: 'orange', B: 'blue',   L: 'red' },
+            orange: { R: 'blue',   B: 'red',    L: 'green' },
+            blue:   { R: 'red',    B: 'green',  L: 'orange' },
+        },
+        blue: { // U = Blue
+            white:  { R: 'red',    B: 'yellow', L: 'orange' },
+            red:    { R: 'yellow', B: 'orange', L: 'white' },
+            yellow: { R: 'orange', B: 'white',  L: 'red' },
+            orange: { R: 'white',  B: 'red',    L: 'yellow' },
+        },
+        green: { // U = Green
+            white:  { R: 'orange', B: 'yellow', L: 'red' },
+            orange: { R: 'yellow', B: 'red',    L: 'white' },
+            yellow: { R: 'red',    B: 'white',  L: 'orange' },
+            red:    { R: 'white',  B: 'orange', L: 'yellow' },
+        },
+        red: { // U = Red
+            white:  { R: 'blue',   B: 'yellow', L: 'green' },
+            blue:   { R: 'yellow', B: 'green',  L: 'white' },
+            yellow: { R: 'green',  B: 'white',  L: 'blue' },
+            green:  { R: 'white',  B: 'blue',   L: 'yellow' },
+        },
+        orange: { // U = Orange
+            white:  { R: 'green',  B: 'yellow', L: 'blue' },
+            green:  { R: 'yellow', B: 'blue',   L: 'white' },
+            yellow: { R: 'blue',   B: 'white',  L: 'green' },
+            blue:   { R: 'white',  B: 'green',  L: 'yellow' },
+        },
+    };
+
+    const upAdj = adj[upColor];
+    if (!upAdj) {
+        console.error(`Adjacency logic missing for Up=${upColor}`);
+        return { R: 'red', B: 'blue', L: 'green' }; // Error fallback with valid colors
+    }
+    const sides = upAdj[frontColor];
+    if (!sides) {
+        console.error(`Adjacency logic missing for Up=${upColor}, Front=${frontColor}`);
+        return { R: 'red', B: 'blue', L: 'green' }; // Error fallback with valid colors
+    }
+
+    return sides;
+}
+
+// --- Determine face colors based on the desired bottom color ---
 // Returns a map where keys are standard faces (U, D, F...) and values
 // are the *actual* colors on those faces when `bottomColor` is at the bottom.
 function determineOrientationColors(bottomColor: CubeColor): Record<Face, CubeColor> {
     const actualFaceColors: Partial<Record<Face, CubeColor>> = {};
     
-    // Reinstate switch statement
-    switch(bottomColor) {
-        case 'white': // D=White, U=Yellow. Random F.
-            actualFaceColors['U'] = 'yellow'; 
-            actualFaceColors['D'] = 'white'; 
-            const sideColorsW: CubeColor[] = ['red', 'orange', 'blue', 'green'];
-            const frontColorW = getRandomElement(sideColorsW);
-            actualFaceColors['F'] = frontColorW;
-            // Adjacencies for U=Yellow
-            switch(frontColorW){
-                case 'red':    actualFaceColors['R'] = 'green';  actualFaceColors['B'] = 'orange'; actualFaceColors['L'] = 'blue'; break;
-                case 'green':  actualFaceColors['R'] = 'orange'; actualFaceColors['B'] = 'blue';   actualFaceColors['L'] = 'red'; break;
-                case 'orange': actualFaceColors['R'] = 'blue';   actualFaceColors['B'] = 'red';    actualFaceColors['L'] = 'green'; break;
-                case 'blue':   actualFaceColors['R'] = 'red';    actualFaceColors['B'] = 'green';  actualFaceColors['L'] = 'orange'; break;
-            }
-            break;
+    // Handle standard orientation separately
+    if (bottomColor === 'yellow') {
+        Object.assign(actualFaceColors, STANDARD_FACE_COLORS);
+    } else {
+        // Unified logic for all other bottom colors
+        const upColor = COLOR_PAIRS[bottomColor];
+        actualFaceColors['U'] = upColor;
+        actualFaceColors['D'] = bottomColor;
 
-        case 'yellow': // D=Yellow, U=White (Standard)
-            Object.assign(actualFaceColors, STANDARD_FACE_COLORS);
-            break;
+        // Determine potential side colors (all except U and D)
+        const potentialSideColors = COLORS.filter(c => c !== upColor && c !== bottomColor);
 
-        case 'red': // D=Red, U=Orange. Random F.
-            actualFaceColors['U'] = 'orange';
-            actualFaceColors['D'] = 'red';
-            const sideColorsR: CubeColor[] = ['white', 'yellow', 'blue', 'green'];
-            const frontColorR = getRandomElement(sideColorsR);
-            actualFaceColors['F'] = frontColorR;
-            // Adjacencies for U=Orange (Opposite of U=Red)
-            switch(frontColorR){
-                case 'white':  actualFaceColors['R'] = 'green'; actualFaceColors['B'] = 'yellow'; actualFaceColors['L'] = 'blue'; break;
-                case 'green':  actualFaceColors['R'] = 'yellow'; actualFaceColors['B'] = 'blue'; actualFaceColors['L'] = 'white'; break;
-                case 'yellow': actualFaceColors['R'] = 'blue'; actualFaceColors['B'] = 'white'; actualFaceColors['L'] = 'green'; break;
-                case 'blue':   actualFaceColors['R'] = 'white'; actualFaceColors['B'] = 'green'; actualFaceColors['L'] = 'yellow'; break;
-            }
-            break;
+        // Randomize Front face color among potential sides
+        const frontColor = getRandomElement(potentialSideColors);
+        actualFaceColors['F'] = frontColor;
 
-        case 'orange': // D=Orange, U=Red. Random F.
-            actualFaceColors['U'] = 'red';
-            actualFaceColors['D'] = 'orange';
-            const sideColorsO: CubeColor[] = ['white', 'yellow', 'blue', 'green'];
-            const frontColorO = getRandomElement(sideColorsO);
-            actualFaceColors['F'] = frontColorO;
-            // Adjacencies for U=Red (Opposite of U=Orange)
-            switch(frontColorO){
-                case 'white':  actualFaceColors['R'] = 'blue'; actualFaceColors['B'] = 'yellow'; actualFaceColors['L'] = 'green'; break;
-                case 'blue':   actualFaceColors['R'] = 'yellow'; actualFaceColors['B'] = 'green'; actualFaceColors['L'] = 'white'; break;
-                case 'yellow': actualFaceColors['R'] = 'green'; actualFaceColors['B'] = 'white'; actualFaceColors['L'] = 'blue'; break;
-                case 'green':  actualFaceColors['R'] = 'white'; actualFaceColors['B'] = 'blue'; actualFaceColors['L'] = 'yellow'; break;
-            }
-            break;
-
-         case 'blue': // D=Blue, U=Green. Random F.
-             actualFaceColors['U'] = 'green';
-             actualFaceColors['D'] = 'blue';
-             const sideColorsB: CubeColor[] = ['white', 'yellow', 'red', 'orange'];
-             const frontColorB = getRandomElement(sideColorsB);
-             actualFaceColors['F'] = frontColorB;
-             // Adjacencies for U=Green (Opposite of U=Blue)
-             switch(frontColorB){
-                 case 'white':  actualFaceColors['R'] = 'red'; actualFaceColors['B'] = 'yellow'; actualFaceColors['L'] = 'orange'; break;
-                 case 'red':    actualFaceColors['R'] = 'yellow'; actualFaceColors['B'] = 'orange'; actualFaceColors['L'] = 'white'; break;
-                 case 'yellow': actualFaceColors['R'] = 'orange'; actualFaceColors['B'] = 'white'; actualFaceColors['L'] = 'red'; break;
-                 case 'orange': actualFaceColors['R'] = 'white'; actualFaceColors['B'] = 'red'; actualFaceColors['L'] = 'yellow'; break;
-             }
-             break;
-
-        case 'green': // D=Green, U=Blue. Random F.
-            actualFaceColors['U'] = 'blue';
-            actualFaceColors['D'] = 'green';
-            const sideColorsG: CubeColor[] = ['white', 'yellow', 'red', 'orange'];
-            const frontColorG = getRandomElement(sideColorsG);
-            actualFaceColors['F'] = frontColorG;
-            // Adjacencies for U=Blue (Opposite of U=Green)
-            switch(frontColorG){
-                case 'white':  actualFaceColors['R'] = 'orange'; actualFaceColors['B'] = 'yellow'; actualFaceColors['L'] = 'red'; break;
-                case 'orange': actualFaceColors['R'] = 'yellow'; actualFaceColors['B'] = 'red'; actualFaceColors['L'] = 'white'; break;
-                case 'yellow': actualFaceColors['R'] = 'red'; actualFaceColors['B'] = 'white'; actualFaceColors['L'] = 'orange'; break;
-                case 'red':    actualFaceColors['R'] = 'white'; actualFaceColors['B'] = 'orange'; actualFaceColors['L'] = 'yellow'; break;
-            }
-            break;
+        // Calculate R, B, L based on determined U and randomized F
+        const sides = getSideColors(upColor, frontColor);
+        actualFaceColors['R'] = sides.R;
+        actualFaceColors['B'] = sides.B;
+        actualFaceColors['L'] = sides.L;
     }
 
     return actualFaceColors as Record<Face, CubeColor>;
