@@ -60,7 +60,7 @@ function App() {
           </main>
           {/* Footer links - adjust color */}
            <footer className="p-4 text-center text-sm text-slate-400">
-             <Link to="/stats" className="hover:text-sky-400">View Stats</Link> | <a href="https://github.com/YardenNaveh/RubiksCubeTester" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400">GitHub</a>
+             <Link to="/stats" className="hover:text-sky-400">View Stats</Link>
            </footer>
         </div>
       </div>
