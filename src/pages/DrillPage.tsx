@@ -115,12 +115,12 @@ const DrillPage: React.FC<DrillPageProps> = ({ appData, setAppData }) => {
 
   return (
     <div className="flex flex-col items-center justify-between flex-grow space-y-6">
-       <p className="text-center text-slate-300">
-         {/* Use ref face names and colors */} 
-         <span className="capitalize">{getFaceName(currentProblem.ref1Face)}</span>: <span className="font-bold capitalize text-slate-100">{currentProblem.ref1Color}</span>, 
-         <span className="capitalize">{getFaceName(currentProblem.ref2Face)}</span>: <span className="font-bold capitalize text-slate-100">{currentProblem.ref2Color}</span>. 
-         What color is <span className="font-bold text-slate-100">{currentProblem.targetRelation}</span>?
-       </p>
+      <p className="text-center text-slate-300">
+        {/* Use ref face names and colors */} 
+        <span className="capitalize">{getFaceName(currentProblem.ref1Face)}</span>: <span className="font-bold capitalize text-slate-100">{currentProblem.ref1Color}</span>, 
+        <span className="capitalize">{getFaceName(currentProblem.ref2Face)}</span>: <span className="font-bold capitalize text-slate-100">{currentProblem.ref2Color}</span>. 
+        What color is <span className="font-bold text-slate-100">{currentProblem.targetRelation}</span>?
+      </p>
 
       <Cube
         ref1Face={currentProblem.ref1Face}

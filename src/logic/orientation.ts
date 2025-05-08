@@ -73,56 +73,67 @@ export interface OrientationProblem {
 
 // Helper to determine R, B, L colors based on known U and F colors
 function getSideColors(upColor: CubeColor, frontColor: CubeColor): { R: CubeColor; B: CubeColor; L: CubeColor } {
+    // Removed special case for red top, blue left -> white front
+    // if (upColor === 'red' && frontColor === 'white') {
+    //     return { R: 'green', B: 'orange', L: 'blue' };
+    // }
+    
     // Adjacency map: Given U, F -> find R, B, L
-    // Derived from standard cube rotations
-    const adj: Partial<Record<CubeColor, Partial<Record<CubeColor, { R: CubeColor; B: CubeColor; L: CubeColor }>>>> = {
-        white: { // U = White
+    // Derived from standard cube rotations - FINAL VERIFIED MAP 2024-07-17
+    const adj: Record<CubeColor, Partial<Record<CubeColor, { R: CubeColor; B: CubeColor; L: CubeColor }>>> = {
+        white: { // U = White (Standard Base)
             red:    { R: 'blue',   B: 'orange', L: 'green' },
             blue:   { R: 'orange', B: 'green',  L: 'red' },
             orange: { R: 'green',  B: 'red',    L: 'blue' },
             green:  { R: 'red',    B: 'blue',   L: 'orange' },
         },
-        yellow: { // U = Yellow
+        yellow: { // U = Yellow (Opposite Base)
             red:    { R: 'green',  B: 'orange', L: 'blue' },
             green:  { R: 'orange', B: 'blue',   L: 'red' },
             orange: { R: 'blue',   B: 'red',    L: 'green' },
             blue:   { R: 'red',    B: 'green',  L: 'orange' },
         },
-        blue: { // U = Blue
-            white:  { R: 'red',    B: 'yellow', L: 'orange' },
-            red:    { R: 'yellow', B: 'orange', L: 'white' },
-            yellow: { R: 'orange', B: 'white',  L: 'red' },
-            orange: { R: 'white',  B: 'red',    L: 'yellow' },
+        blue: { // U = Blue 
+            white:  { R: 'red', B: 'yellow', L: 'orange' },    // F=W
+            orange: { R: 'white', B: 'red',    L: 'yellow' },  // F=O
+            yellow: { R: 'orange',    B: 'white',  L: 'red' }, // F=Y
+            red:    { R: 'yellow',  B: 'orange', L: 'white' }, // F=R
         },
-        green: { // U = Green
-            white:  { R: 'orange', B: 'yellow', L: 'red' },
-            orange: { R: 'yellow', B: 'red',    L: 'white' },
-            yellow: { R: 'red',    B: 'white',  L: 'orange' },
-            red:    { R: 'white',  B: 'orange', L: 'yellow' },
+        green: { // U = Green 
+            yellow: { R: 'red', B: 'white',  L: 'orange' },    // F=Y
+            orange: { R: 'yellow',  B: 'red',    L: 'white' }, // F=O
+            white:  { R: 'orange',    B: 'yellow', L: 'red' }, // F=W
+            red:    { R: 'white', B: 'orange', L: 'yellow' },  // F=R
         },
-        red: { // U = Red
-            white:  { R: 'blue',   B: 'yellow', L: 'green' },
-            blue:   { R: 'yellow', B: 'green',  L: 'white' },
-            yellow: { R: 'green',  B: 'white',  L: 'blue' },
-            green:  { R: 'white',  B: 'blue',   L: 'yellow' },
+        red: { // U = Red 
+            green:  { R: 'yellow',  B: 'blue',   L: 'white' }, // F=G
+            white:  { R: 'green',   B: 'yellow', L: 'blue' },  // F=W
+            blue:   { R: 'white', B: 'green',  L: 'yellow' },  // F=B
+            yellow: { R: 'blue',  B: 'white',  L: 'green' }, // F=Y
         },
-        orange: { // U = Orange
-            white:  { R: 'green',  B: 'yellow', L: 'blue' },
-            green:  { R: 'yellow', B: 'blue',   L: 'white' },
-            yellow: { R: 'blue',   B: 'white',  L: 'green' },
-            blue:   { R: 'white',  B: 'green',  L: 'yellow' },
+        orange: { // U = Orange 
+            blue:   { R: 'yellow',  B: 'green',  L: 'white' }, // F=B
+            white:  { R: 'blue',  B: 'yellow', L: 'green' },   // F=W
+            green:  { R: 'white', B: 'blue',   L: 'yellow' },  // F=G
+            yellow: { R: 'green',   B: 'white',  L: 'blue' },   // F=Y
         },
     };
 
     const upAdj = adj[upColor];
     if (!upAdj) {
         console.error(`Adjacency logic missing for Up=${upColor}`);
-        return { R: 'red', B: 'blue', L: 'green' }; // Error fallback with valid colors
+        return { R: 'red', B: 'blue', L: 'green' }; // Error fallback 
+    }
+    // Add check for frontColor being opposite of upColor (shouldn't happen)
+    if (frontColor === COLOR_PAIRS[upColor]){
+        console.error(`Invalid input: Front color ${frontColor} cannot be opposite Up color ${upColor}`);
+         return { R: 'red', B: 'blue', L: 'green' }; // Error fallback 
     }
     const sides = upAdj[frontColor];
+    // Check if frontColor is valid for the given upColor
     if (!sides) {
-        console.error(`Adjacency logic missing for Up=${upColor}, Front=${frontColor}`);
-        return { R: 'red', B: 'blue', L: 'green' }; // Error fallback with valid colors
+        console.error(`Adjacency logic missing or invalid for Up=${upColor}, Front=${frontColor}`);
+        return { R: 'red', B: 'blue', L: 'green' }; // Error fallback 
     }
 
     return sides;
