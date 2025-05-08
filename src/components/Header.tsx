@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Settings, Volume2, VolumeX } from 'lucide-react'; // Using lucide-react for icons
-import { COLORS } from '../logic/cubeConstants'; // Import COLORS
+import { Volume2, VolumeX } from 'lucide-react'; // Using lucide-react for icons
 import { BottomColorSetting } from '../hooks/useLocalStorage'; // Import setting type
 import HamburgerMenu from './HamburgerMenu'; // Import HamburgerMenu
 

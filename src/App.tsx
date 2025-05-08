@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import DrillPage from './pages/DrillPage';
 import StatsPage from './pages/StatsPage';
-import F2LNinjaPage from './pages/F2LNinjaPage';
+import F2LNinjaPage from './pages/F2LPage';
+import F2LStatsPage from './pages/F2LStatsPage';
 import { useAppStorage } from './hooks/useLocalStorage';
 import Header from './components/Header';
 import { useEffect } from 'react';
@@ -55,7 +56,8 @@ function App() {
             <Routes>
               <Route path="/" element={<Navigate to="/color-sensei" replace />} />
               <Route path="/color-sensei" element={<DrillPage appData={appData} setAppData={setAppData} />} />
-              <Route path="/f2l-ninja" element={<F2LNinjaPage />} />
+              <Route path="/f2l" element={<F2LNinjaPage />} />
+              <Route path="/f2l/stats" element={<F2LStatsPage />} />
               <Route path="/stats" element={<StatsPage appData={appData} setAppData={setAppData} />} />
               <Route path="*" element={<Navigate to="/color-sensei" replace />} />
             </Routes>
