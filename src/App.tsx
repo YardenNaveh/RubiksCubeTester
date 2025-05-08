@@ -3,9 +3,8 @@ import DrillPage from './pages/DrillPage';
 import StatsPage from './pages/StatsPage';
 import { useAppStorage } from './hooks/useLocalStorage';
 import Header from './components/Header';
-import { useEffect, useState } from 'react';
-import { CubeColor, COLORS } from './logic/cubeConstants';
-import { OrientationProblem, generateOrientationProblem, checkAnswer } from './logic/orientation';
+import { useEffect } from 'react';
+import { CubeColor } from './logic/cubeConstants';
 import './App.css';
 
 function App() {
