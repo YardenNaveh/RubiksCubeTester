@@ -16,25 +16,35 @@ const plasticColor = new THREE.Color('#222222'); // Dark gray plastic
 
 const F2LCubie: React.FC<F2LCubieProps> = ({ liveState, onClick, selected, solved }) => {
   const groupRef = useRef<THREE.Group>(null);
-  const stickerMaterials = useRef<Record<string, THREE.MeshBasicMaterial>>({});
+  // Store materials directly in ref, keyed by face sticker ID (e.g. UFR-U, UFR-F)
+  const stickerMaterials = useRef<Record<string, THREE.MeshStandardMaterial>>({}); 
 
   const { definition, currentPosition, currentOrientation } = liveState;
 
   // Memoize sticker geometries to avoid recreation
   const stickerGeometry = useMemo(() => new THREE.PlaneGeometry(STICKER_SIZE, STICKER_SIZE), []);
 
-  // Update materials based on solved/selected state
+  // Create/Update materials based on solved/selected state
   useEffect(() => {
     definition.stickers.forEach(sticker => {
+      const materialKey = `${definition.id}-${sticker.face}`;
       const targetColor = solved ? CUBE_COLOR_MAP.black : CUBE_COLOR_MAP[sticker.color];
-      if (stickerMaterials.current[sticker.face]) {
-        stickerMaterials.current[sticker.face].color.set(targetColor);
-        // Adjust opacity/transparency for selection visual cue
-        stickerMaterials.current[sticker.face].opacity = selected ? 0.85 : 1.0;
-        stickerMaterials.current[sticker.face].transparent = selected; 
+      const emissiveColor = selected && !solved ? CUBE_COLOR_MAP.highlight : '#000000';
+
+      if (stickerMaterials.current[materialKey]) {
+        stickerMaterials.current[materialKey].color.set(targetColor);
+        stickerMaterials.current[materialKey].emissive.set(emissiveColor);
+      } else {
+        stickerMaterials.current[materialKey] = new THREE.MeshStandardMaterial({
+          color: targetColor,
+          emissive: emissiveColor,
+          roughness: 0.7,
+          metalness: 0.1,
+          side: THREE.DoubleSide,
+        });
       }
     });
-  }, [solved, selected, definition.stickers]); // Depend on solved/selected state
+  }, [solved, selected, definition.id, definition.stickers]);
 
   // Update group position and orientation when liveState changes
   useEffect(() => {
@@ -51,19 +61,6 @@ const F2LCubie: React.FC<F2LCubieProps> = ({ liveState, onClick, selected, solve
     }
   };
 
-  // Create materials only once, memoized by face
-  useMemo(() => {
-    definition.stickers.forEach(sticker => {
-      const color = solved ? CUBE_COLOR_MAP.black : CUBE_COLOR_MAP[sticker.color];
-      stickerMaterials.current[sticker.face] = new THREE.MeshBasicMaterial({
-         color: color, 
-         side: THREE.DoubleSide, // Render both sides just in case
-         transparent: selected, 
-         opacity: selected ? 0.85 : 1.0
-      });
-    });
-  }, [definition.stickers]); // Only recreate if definition changes (shouldn't happen often)
-
   return (
     <group ref={groupRef} onClick={handleClick}>
       {/* Plastic Core - slightly smaller */}
@@ -74,15 +71,16 @@ const F2LCubie: React.FC<F2LCubieProps> = ({ liveState, onClick, selected, solve
       
       {/* Stickers */}
       {definition.stickers.map((sticker) => {
+        const materialKey = `${definition.id}-${sticker.face}`;
         // Calculate sticker position and orientation relative to the cubie center
         const stickerPos = sticker.normal.clone().multiplyScalar(STICKER_OFFSET);
         const stickerQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), sticker.normal); // Align plane Z to sticker normal
         
         return (
           <mesh
-            key={sticker.face}
+            key={materialKey} // Use a more unique key
             geometry={stickerGeometry}
-            material={stickerMaterials.current[sticker.face]} // Use existing material
+            material={stickerMaterials.current[materialKey]} 
             position={stickerPos}
             quaternion={stickerQuat}
           />

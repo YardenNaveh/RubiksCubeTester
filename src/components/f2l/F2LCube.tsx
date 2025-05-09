@@ -11,12 +11,14 @@ interface F2LCubeProps {
   onPairFound: () => void;
   onMiss: () => void;
   cubeState: RubiksCubeState; // Expect the detailed state
+  bottomColor: CubeColor; // Added bottomColor prop
 }
 
 const F2LCube: React.FC<F2LCubeProps> = ({ 
   onPairFound, 
   onMiss,
-  cubeState 
+  cubeState,
+  bottomColor // Destructure bottomColor
 }) => {
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
   const [selectedPieceType, setSelectedPieceType] = useState<'edge' | 'corner' | null>(null);
@@ -75,7 +77,15 @@ const F2LCube: React.FC<F2LCubeProps> = ({
     setSolvedPairs(new Set());
     setSelectedPieceId(null);
     setSelectedPieceType(null);
+    // No need to reset camera here for every scramble, only for bottomColor change
   }, [cubeState]);
+
+  // Reset camera when bottomColor changes to ensure initial view is correct
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.reset();
+    }
+  }, [bottomColor]);
 
   return (
     <Canvas 

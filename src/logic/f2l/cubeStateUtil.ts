@@ -4,6 +4,27 @@ import {
   applyUMove,
   applyUPrimeMove,
   applyU2Move,
+  applyRMove,
+  applyRPrimeMove,
+  applyR2Move,
+  applyLMove,
+  applyLPrimeMove,
+  applyL2Move,
+  applyFMove,
+  applyFPrimeMove,
+  applyF2Move,
+  applyBMove,
+  applyBPrimeMove,
+  applyB2Move,
+  applyWCxMove,
+  applyWCxPrimeMove,
+  applyWCx2Move,
+  applyWCyMove,
+  applyWCyPrimeMove,
+  applyWCy2Move,
+  applyWCzMove,
+  applyWCzPrimeMove,
+  applyWCz2Move,
 } from './cubePiece';
 import { CubeColor, COLOR_PAIRS } from '../cubeConstants'; // For default color scheme
 
@@ -61,60 +82,131 @@ const CUBIE_DEFS: CubieDefinition[] = [
 export function createInitialCubeState(bottomColor: CubeColor = 'yellow'): RubiksCubeState {
   const state: RubiksCubeState = {};
   
-  // TODO: Adjust initial orientations and sticker colors based on bottomColor
-  // For now, assumes standard Yellow bottom, White top.
-  // This requires rotating the entire cube definition if bottomColor is not yellow.
+  // Default CUBIE_DEFS assume:
+  // U: white (+Y), D: yellow (-Y)
+  // F: red (+Z),   B: orange (-Z)
+  // L: green (-X), R: blue (+X)
+
+  let rotationFn: ((pos: THREE.Vector3, ori: THREE.Quaternion) => { position: THREE.Vector3; orientation: THREE.Quaternion }) | null = null;
+
+  // Determine the whole-cube rotation needed to bring the selected bottomColor to the world -Y axis (D face)
+  // The CUBIE_DEFS are defined with 'yellow' already on the D face (-Y).
+  if (bottomColor === 'white') { // white is default U (+Y), needs to go to D (-Y)
+    rotationFn = applyWCx2Move;    // Rotate 180 degrees around X-axis (Y -> -Y, Z -> -Z)
+  } else if (bottomColor === 'red') { // red is default F (+Z), needs to go to D (-Y)
+    rotationFn = applyWCxPrimeMove; // Rotate +90 degrees around X-axis (Z -> -Y)
+  } else if (bottomColor === 'blue') { // blue is default R (+X), needs to go to D (-Y)
+    rotationFn = applyWCzPrimeMove; // Rotate -90 degrees around Z-axis (X -> -Y)
+  } else if (bottomColor === 'orange') { // orange is default B (-Z), needs to go to D (-Y)
+    rotationFn = applyWCxMove;      // Rotate -90 degrees around X-axis (-Z -> -Y)
+  } else if (bottomColor === 'green') { // green is default L (-X), needs to go to D (-Y)
+    rotationFn = applyWCzMove;      // Rotate +90 degrees around Z-axis (-X -> -Y)
+  }
+  // If bottomColor is 'yellow', no rotationFn is set, so no transformation applied.
 
   CUBIE_DEFS.forEach(def => {
+    let currentPosition = def.initialPosition.clone();
+    let currentOrientation = def.initialOrientation.clone();
+
+    if (rotationFn) {
+      const rotated = rotationFn(currentPosition, currentOrientation);
+      currentPosition = rotated.position;
+      currentOrientation = rotated.orientation;
+    }
+    
+    // The sticker colors are absolute ('white', 'red', etc.) and are part of the definition.
+    // They rotate with the piece. The 'face' property (U, D, F, etc.) in CubieSticker
+    // still refers to the logical face of the piece in its *original* solved state definition,
+    // not its *new* orientation after whole-cube rotation. This is important for identification.
+    // For rendering, the `currentPosition` and `currentOrientation` of the cubie, combined with
+    // the sticker's `normal` vector (in local cubie space), will determine its final world orientation.
+
+    // We need to be careful: `def` is from CUBIE_DEFS and should remain pristine.
+    // We create a *new* definition-like object for the live state if we were to change sticker colors/faces.
+    // However, for now, we are only changing the initial pose of the cubies.
+    // The `definition` field in `LiveCubieState` should arguably refer to the *original* CUBIE_DEFS item,
+    // so that `isDCrossSolved` (which compares to `piece.definition.initialPosition`) still works
+    // relative to the *selected bottom color's solved state*.
+
+    // Let's adjust what `isDCrossSolved` compares against.
+    // The `initialPosition` and `initialOrientation` stored in `LiveCubieState`'s `definition`
+    // should be the *transformed* ones if a rotation was applied.
+
+    const effectiveDefinition: CubieDefinition = {
+      ...def,
+      // Store the rotated position/orientation as the "initial" for this specific cube instance
+      initialPosition: currentPosition.clone(), 
+      initialOrientation: currentOrientation.clone(),
+      // Stickers remain the same, their colors are fixed.
+      // Their normals are also in local space, so they don't change with whole-cube rotation.
+      stickers: def.stickers.map(s => ({ ...s, normal: s.normal.clone()})),
+    };
+
     state[def.id] = {
-      definition: def,
-      currentPosition: def.initialPosition.clone(),
-      currentOrientation: def.initialOrientation.clone(),
+      // definition: def, // Original definition, before whole-cube rotation
+      definition: effectiveDefinition, // Definition as it appears in the solved state for THIS bottomColor
+      currentPosition: currentPosition.clone(), // This is now the same as effectiveDefinition.initialPosition
+      currentOrientation: currentOrientation.clone(), // Same as effectiveDefinition.initialOrientation
     };
   });
   return state;
 }
 
-/**
- * Applies a move (U, U', U2) to the cube state.
- * @param state The current cube state.
- * @param move The move to apply.
- * @returns The new cube state.
- */
-export function applyCubeMove(state: RubiksCubeState, move: "U" | "U'" | "U2"): RubiksCubeState {
-  // Create a new state object
+export type AllMoves = 
+  'U' | "U'" | 'U2' | 
+  'R' | "R'" | 'R2' | 
+  'L' | "L'" | 'L2' | 
+  'F' | "F'" | 'F2' | 
+  'B' | "B'" | 'B2'; // Extendable to D, M, E, S, x, y, z etc.
+
+export function applyCubeMove(state: RubiksCubeState, move: AllMoves): RubiksCubeState {
   const newState: RubiksCubeState = {};
 
-  // Iterate over the old state
   for (const id in state) {
     const oldLiveCubie = state[id];
-    
-    // Clone the properties for the new state
     const newLiveCubie: LiveCubieState = {
-      definition: oldLiveCubie.definition, // Reference the original definition (it's static)
-      currentPosition: oldLiveCubie.currentPosition.clone(), // Clone THREE objects properly
+      definition: oldLiveCubie.definition,
+      currentPosition: oldLiveCubie.currentPosition.clone(),
       currentOrientation: oldLiveCubie.currentOrientation.clone(),
     };
 
-    // Check if this cubie is in the U layer and needs transformation
-    if (newLiveCubie.currentPosition.y > 0.5) { 
-      let result;
-      if (move === 'U') {
-        result = applyUMove(newLiveCubie.currentPosition, newLiveCubie.currentOrientation);
-      } else if (move === "U'") {
-        result = applyUPrimeMove(newLiveCubie.currentPosition, newLiveCubie.currentOrientation);
-      } else { // U2
-        result = applyU2Move(newLiveCubie.currentPosition, newLiveCubie.currentOrientation);
+    let transformed = false;
+    let result = { position: newLiveCubie.currentPosition, orientation: newLiveCubie.currentOrientation };
+
+    // Determine which pieces are affected by the move and apply transformation
+    // The condition for being in a layer needs to be precise (e.g., > 0.5 for U, < -0.5 for D based on positions)
+    if ((move.startsWith('U') && newLiveCubie.currentPosition.y > 0.5) ||
+        (move.startsWith('R') && newLiveCubie.currentPosition.x > 0.5) ||
+        (move.startsWith('L') && newLiveCubie.currentPosition.x < -0.5) ||
+        (move.startsWith('F') && newLiveCubie.currentPosition.z > 0.5) ||
+        (move.startsWith('B') && newLiveCubie.currentPosition.z < -0.5)) {
+      
+      transformed = true;
+      switch (move) {
+        case 'U': result = applyUMove(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case "U'": result = applyUPrimeMove(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case 'U2': result = applyU2Move(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case 'R': result = applyRMove(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case "R'": result = applyRPrimeMove(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case 'R2': result = applyR2Move(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case 'L': result = applyLMove(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case "L'": result = applyLPrimeMove(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case 'L2': result = applyL2Move(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case 'F': result = applyFMove(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case "F'": result = applyFPrimeMove(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case 'F2': result = applyF2Move(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case 'B': result = applyBMove(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case "B'": result = applyBPrimeMove(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
+        case 'B2': result = applyB2Move(newLiveCubie.currentPosition, newLiveCubie.currentOrientation); break;
       }
-      // Update the cloned cubie's state
+    }
+
+    if (transformed) {
       newLiveCubie.currentPosition = result.position;
       newLiveCubie.currentOrientation = result.orientation;
     }
-
-    // Add the (potentially transformed) cloned cubie to the new state
     newState[id] = newLiveCubie;
   }
-
   return newState;
 }
 
@@ -129,14 +221,11 @@ export function isDCrossSolved(state: RubiksCubeState): boolean {
         const piece = state[id];
         if (!piece) return false; // Should not happen
 
+        // Now we compare current state to the initial state defined for the *current bottomColor orientation*
         if (!piece.currentPosition.equals(piece.definition.initialPosition)) {
             return false;
         }
-        // For orientations, a small epsilon might be needed for float comparisons
         if (!piece.currentOrientation.equals(piece.definition.initialOrientation)) {
-            // Check if it's a 180-degree flip that might still be considered "oriented" for cross
-            // This depends on how strict the definition of "oriented cross" is.
-            // For simplicity here, we demand exact initial orientation.
             return false;
         }
     }

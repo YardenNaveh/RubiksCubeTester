@@ -41,64 +41,66 @@ export const UFR_CORNER_DEF: CubieDefinition = {
 
 // --- Transformation Helpers ---
 
-// Axis for rotations
+const AXIS_X = new THREE.Vector3(1, 0, 0);
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
+const AXIS_Z = new THREE.Vector3(0, 0, 1);
 
-/**
- * Applies a U-turn (90 degrees clockwise around Y axis) to a cubie's 
- * position and orientation if it's in the U layer.
- * @param position Current position of the cubie
- * @param orientation Current orientation of the cubie
- * @returns Updated { position, orientation }
- */
-export function applyUMove(
-  position: THREE.Vector3,
-  orientation: THREE.Quaternion
-): { position: THREE.Vector3; orientation: THREE.Quaternion } {
+function applyRotation(position: THREE.Vector3, orientation: THREE.Quaternion, axis: THREE.Vector3, angle: number): { position: THREE.Vector3; orientation: THREE.Quaternion } {
   const newPosition = position.clone();
   const newOrientation = orientation.clone();
-
-  // Rotation matrix for 90 degrees around Y
-  const rotationMatrix = new THREE.Matrix4().makeRotationAxis(AXIS_Y, -Math.PI / 2); // Negative for clockwise from top view
-
-  // Rotate position
-  newPosition.applyMatrix4(rotationMatrix);
-  
-  // Rotate orientation
-  const rotationQuaternion = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
-  newOrientation.premultiply(rotationQuaternion);
-
-  return { position: newPosition, orientation: newOrientation };
-}
-
-/**
- * Applies a U-prime turn (-90 degrees)
- */
-export function applyUPrimeMove(
-  position: THREE.Vector3,
-  orientation: THREE.Quaternion
-): { position: THREE.Vector3; orientation: THREE.Quaternion } {
-  const newPosition = position.clone();
-  const newOrientation = orientation.clone();
-  const rotationMatrix = new THREE.Matrix4().makeRotationAxis(AXIS_Y, Math.PI / 2);
+  const rotationMatrix = new THREE.Matrix4().makeRotationAxis(axis, angle);
   newPosition.applyMatrix4(rotationMatrix);
   const rotationQuaternion = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
   newOrientation.premultiply(rotationQuaternion);
   return { position: newPosition, orientation: newOrientation };
 }
 
-/**
- * Applies a U2 turn (180 degrees)
- */
-export function applyU2Move(
-  position: THREE.Vector3,
-  orientation: THREE.Quaternion
-): { position: THREE.Vector3; orientation: THREE.Quaternion } {
-  const newPosition = position.clone();
-  const newOrientation = orientation.clone();
-  const rotationMatrix = new THREE.Matrix4().makeRotationAxis(AXIS_Y, -Math.PI); // 180 deg
-  newPosition.applyMatrix4(rotationMatrix);
-  const rotationQuaternion = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
-  newOrientation.premultiply(rotationQuaternion);
-  return { position: newPosition, orientation: newOrientation };
-} 
+// U-layer moves (around Y axis)
+export const applyUMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Y, -Math.PI / 2);
+export const applyUPrimeMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Y, Math.PI / 2);
+export const applyU2Move = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Y, -Math.PI);
+
+// R-layer moves (around X axis - from R face perspective, a clockwise R move is negative rotation around world X)
+export const applyRMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_X, -Math.PI / 2);
+export const applyRPrimeMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_X, Math.PI / 2);
+export const applyR2Move = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_X, -Math.PI);
+
+// L-layer moves (around X axis - from L face perspective, a clockwise L move is positive rotation around world X)
+export const applyLMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_X, Math.PI / 2);
+export const applyLPrimeMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_X, -Math.PI / 2);
+export const applyL2Move = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_X, Math.PI);
+
+// F-layer moves (around Z axis - from F face perspective, a clockwise F move is negative rotation around world Z)
+export const applyFMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Z, -Math.PI / 2);
+export const applyFPrimeMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Z, Math.PI / 2);
+export const applyF2Move = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Z, -Math.PI);
+
+// B-layer moves (around Z axis - from B face perspective, a clockwise B move is positive rotation around world Z)
+export const applyBMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Z, Math.PI / 2);
+export const applyBPrimeMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Z, -Math.PI / 2);
+export const applyB2Move = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Z, Math.PI);
+
+// --- Whole Cube Rotation Helpers (affect all 26 cubies) ---
+// These rotate the entire cube around its center.
+// The cubie's `position` is rotated, and its `orientation` is updated to reflect the new frame.
+
+// x: Rotate entire cube around X axis (like an R move but for the whole cube)
+export const applyWCxMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_X, -Math.PI / 2);
+// x': Rotate entire cube around X axis prime
+export const applyWCxPrimeMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_X, Math.PI / 2);
+// x2: Rotate entire cube around X axis 180
+export const applyWCx2Move = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_X, -Math.PI);
+
+// y: Rotate entire cube around Y axis (like a U move but for the whole cube)
+export const applyWCyMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Y, -Math.PI / 2);
+// y': Rotate entire cube around Y axis prime
+export const applyWCyPrimeMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Y, Math.PI / 2);
+// y2: Rotate entire cube around Y axis 180
+export const applyWCy2Move = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Y, -Math.PI);
+
+// z: Rotate entire cube around Z axis (like an F move but for the whole cube)
+export const applyWCzMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Z, -Math.PI / 2);
+// z': Rotate entire cube around Z axis prime
+export const applyWCzPrimeMove = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Z, Math.PI / 2);
+// z2: Rotate entire cube around Z axis 180
+export const applyWCz2Move = (pos: THREE.Vector3, ori: THREE.Quaternion) => applyRotation(pos, ori, AXIS_Z, -Math.PI); 

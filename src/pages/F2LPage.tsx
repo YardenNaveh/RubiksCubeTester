@@ -26,6 +26,18 @@ const F2LPage: React.FC = () => {
 
   const bottomColor = appData.settings.bottomColor as CubeColor;
 
+  const getScrambleOrientationContext = (bColor: CubeColor): { up: CubeColor; front: CubeColor } => {
+    switch (bColor) {
+      case 'yellow': return { up: 'white', front: 'red' };
+      case 'white': return { up: 'yellow', front: 'orange' };
+      case 'red': return { up: 'orange', front: 'white' };
+      case 'blue': return { up: 'green', front: 'red' };
+      case 'orange': return { up: 'red', front: 'yellow' };
+      case 'green': return { up: 'blue', front: 'red' };
+      default: return { up: 'white', front: 'red' }; // Should not happen
+    }
+  };
+
   const handleScramble = () => {
     const { scrambleString: newScramble, finalState } = generateDetailedF2LScramble(bottomColor, 20);
     setScrambleString(newScramble);
@@ -108,6 +120,11 @@ const F2LPage: React.FC = () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const orientationContext = getScrambleOrientationContext(bottomColor);
+  const scrambleDisplayString = scrambleString 
+    ? `(Up: ${orientationContext.up}, Front: ${orientationContext.front}) ${scrambleString}` 
+    : "Click Scramble to start";
+
   return (
     <div className="flex flex-col items-center w-full gap-4">
       <h1 className="text-xl font-bold text-sky-400">F2L Pair Ninja</h1>
@@ -117,6 +134,7 @@ const F2LPage: React.FC = () => {
           onPairFound={handlePairFound} 
           onMiss={handleMiss} 
           cubeState={cubeState}
+          bottomColor={bottomColor}
         />
       </div>
 
@@ -136,7 +154,7 @@ const F2LPage: React.FC = () => {
           alert("Scramble copied to clipboard!");
         }}
       >
-        {scrambleString || "Click Scramble to start"}
+        {scrambleDisplayString}
       </div>
 
       <div className="flex justify-between w-full">
