@@ -17,7 +17,7 @@ const Header: React.FC<HeaderProps> = ({
   currentBottomColor,
   onBottomColorChange
  }) => {
-  const bottomColorOptions: (BottomColorSetting | 'random')[] = ['random', 'white', 'yellow', 'blue', 'green', 'red', 'orange'];
+  const bottomColorOptions: BottomColorSetting[] = ['random', 'white', 'yellow', 'blue', 'green', 'red', 'orange'];
 
   return (
     <header className="w-full bg-slate-800 shadow-md p-4 flex justify-between items-center sticky top-0 z-10 gap-2">

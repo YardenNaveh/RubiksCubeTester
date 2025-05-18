@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { useAppStorage } from '../hooks/useLocalStorage';
+import { useAppStorage, BottomColorSetting } from '../hooks/useLocalStorage';
 import { useSound } from '../hooks/useSound';
 import F2LCube from '../components/f2l/F2LCube';
 import useF2LStore from '../state/f2lStore';
 import { RubiksCubeState, createInitialCubeState, generateDetailedF2LScramble } from '../logic/f2l/scramble';
-import { CubeColor } from '../logic/cubeConstants';
+import { CubeColor, COLORS } from '../logic/cubeConstants';
 
 const F2LPage: React.FC = () => {
   const [appData] = useAppStorage();
@@ -16,7 +16,14 @@ const F2LPage: React.FC = () => {
   const [time, setTime] = useState(0);
   const [scrambleString, setScrambleString] = useState("");
   const [misses, setMisses] = useState(0);
-  const [cubeState, setCubeState] = useState<RubiksCubeState>(createInitialCubeState(appData.settings.bottomColor as CubeColor));
+
+  // Holds the actual CubeColor used for the current scramble, resolved from 'random' if needed
+  const [actualBottomColorForScramble, setActualBottomColorForScramble] = useState<CubeColor>(() => {
+    const initialSetting = appData.settings.bottomColor;
+    return initialSetting === 'random' ? COLORS[Math.floor(Math.random() * COLORS.length)] : initialSetting;
+  });
+
+  const [cubeState, setCubeState] = useState<RubiksCubeState>(createInitialCubeState(actualBottomColorForScramble));
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number | null>(null);
@@ -24,9 +31,11 @@ const F2LPage: React.FC = () => {
   const playSuccessSound = useSound('ding', appData.settings.muted);
   const playErrorSound = useSound('bzzt', appData.settings.muted);
 
-  const bottomColor = appData.settings.bottomColor as CubeColor;
+  // This is the setting from global state (can be 'random')
+  const bottomColorSetting = appData.settings.bottomColor;
+  console.log('[F2LPage] Render cycle. Current bottomColorSetting from appData:', bottomColorSetting);
 
-  const getScrambleOrientationContext = (bColor: CubeColor): { up: CubeColor; front: CubeColor } => {
+  const getScrambleOrientationContext = useCallback((bColor: CubeColor): { up: CubeColor; front: CubeColor } => {
     switch (bColor) {
       case 'yellow': return { up: 'white', front: 'red' };
       case 'white': return { up: 'yellow', front: 'orange' };
@@ -34,12 +43,20 @@ const F2LPage: React.FC = () => {
       case 'blue': return { up: 'green', front: 'red' };
       case 'orange': return { up: 'red', front: 'yellow' };
       case 'green': return { up: 'blue', front: 'red' };
-      default: return { up: 'white', front: 'red' }; // Should not happen
+      default: return { up: 'white', front: 'red' };
     }
-  };
+  }, []);
 
-  const handleScramble = () => {
-    const { scrambleString: newScramble, finalState } = generateDetailedF2LScramble(bottomColor, 20);
+  const handleScramble = useCallback(() => {
+    // Determine the actual CubeColor for this scramble
+    const colorForThisScramble = bottomColorSetting === 'random' 
+      ? COLORS[Math.floor(Math.random() * COLORS.length)] 
+      : bottomColorSetting;
+    
+    setActualBottomColorForScramble(colorForThisScramble);
+    console.log(`[F2LPage] handleScramble: Setting actualBottomColorForScramble to ${colorForThisScramble}`);
+
+    const { scrambleString: newScramble, finalState } = generateDetailedF2LScramble(colorForThisScramble, 20);
     setScrambleString(newScramble);
     setCubeState(finalState);
     setPairsFound(0);
@@ -52,16 +69,18 @@ const F2LPage: React.FC = () => {
       timerRef.current = null;
     }
     startTimeRef.current = null;
-  };
+  }, [bottomColorSetting]);
 
   useEffect(() => {
+    console.log(`[F2LPage] useEffect for bottomColorSetting: ${bottomColorSetting}. Calling handleScramble.`);
     handleScramble();
+
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
     };
-  }, [bottomColor]);
+  }, [bottomColorSetting, handleScramble]);
 
   const handlePairFound = () => {
     if (!timerRunning) {
@@ -120,7 +139,7 @@ const F2LPage: React.FC = () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const orientationContext = getScrambleOrientationContext(bottomColor);
+  const orientationContext = getScrambleOrientationContext(actualBottomColorForScramble);
   const scrambleDisplayString = scrambleString 
     ? `(Up: ${orientationContext.up}, Front: ${orientationContext.front}) ${scrambleString}` 
     : "Click Scramble to start";
@@ -134,7 +153,7 @@ const F2LPage: React.FC = () => {
           onPairFound={handlePairFound} 
           onMiss={handleMiss} 
           cubeState={cubeState}
-          bottomColor={bottomColor}
+          bottomColor={actualBottomColorForScramble}
         />
       </div>
 

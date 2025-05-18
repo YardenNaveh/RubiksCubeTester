@@ -6,7 +6,7 @@ import F2LStatsPage from './pages/F2LStatsPage';
 import { useAppStorage } from './hooks/useLocalStorage';
 import Header from './components/Header';
 import { useEffect } from 'react';
-import { CubeColor } from './logic/cubeConstants';
+import { BottomColorSetting } from './hooks/useLocalStorage';
 import './App.css';
 
 function App() {
@@ -33,7 +33,7 @@ function App() {
     }));
   };
 
-  const handleBottomColorChange = (newColor: CubeColor) => {
+  const handleBottomColorChange = (newColor: BottomColorSetting) => {
     setAppData(prev => ({
       ...prev,
       settings: { ...prev.settings, bottomColor: newColor },
