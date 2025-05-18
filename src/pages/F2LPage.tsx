@@ -1,14 +1,18 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { useAppStorage, BottomColorSetting } from '../hooks/useLocalStorage';
+import { AppStorage, BottomColorSetting } from '../hooks/useLocalStorage';
 import { useSound } from '../hooks/useSound';
 import F2LCube from '../components/f2l/F2LCube';
 import useF2LStore from '../state/f2lStore';
 import { RubiksCubeState, createInitialCubeState, generateDetailedF2LScramble } from '../logic/f2l/scramble';
 import { CubeColor, COLORS } from '../logic/cubeConstants';
 
-const F2LPage: React.FC = () => {
-  const [appData] = useAppStorage();
+// Define props for F2LPage
+interface F2LPageProps {
+  appData: AppStorage;
+}
+
+const F2LPage: React.FC<F2LPageProps> = ({ appData }) => {
   const { recordScrambleComplete } = useF2LStore();
   
   const [pairsFound, setPairsFound] = useState(0);

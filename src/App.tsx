@@ -34,11 +34,14 @@ function App() {
   };
 
   const handleBottomColorChange = (newColor: BottomColorSetting) => {
-    setAppData(prev => ({
-      ...prev,
-      settings: { ...prev.settings, bottomColor: newColor },
-    }));
-    // Note: May need to trigger a re-generation of the problem in DrillPage
+    setAppData(prev => {
+      const newState = {
+        ...prev,
+        settings: { ...prev.settings, bottomColor: newColor },
+      };
+      console.log('[App.tsx] handleBottomColorChange: New bottomColor being set:', newColor, 'Full new state:', newState);
+      return newState;
+    });
   };
 
   return (
@@ -56,7 +59,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Navigate to="/color-sensei" replace />} />
               <Route path="/color-sensei" element={<DrillPage appData={appData} setAppData={setAppData} />} />
-              <Route path="/f2l" element={<F2LNinjaPage />} />
+              <Route path="/f2l" element={<F2LNinjaPage appData={appData} />} />
               <Route path="/f2l/stats" element={<F2LStatsPage />} />
               <Route path="/stats" element={<StatsPage appData={appData} setAppData={setAppData} />} />
               <Route path="*" element={<Navigate to="/color-sensei" replace />} />

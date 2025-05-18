@@ -66,6 +66,7 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val
     try {
       // Allow value to be a function so we have the same API as useState
       const valueToStore = value instanceof Function ? value(storedValue) : value;
+      console.log(`[useLocalStorage]setValue for key '${key}'. New valueToStore:`, valueToStore);
       // Save state
       setStoredValue(valueToStore);
     } catch (error) {
