@@ -96,11 +96,11 @@ export function createInitialCubeState(bottomColor: CubeColor = 'yellow'): Rubik
   } else if (bottomColor === 'red') { // red is default F (+Z), needs to go to D (-Y)
     rotationFn = applyWCxPrimeMove; // Rotate +90 degrees around X-axis (Z -> -Y)
   } else if (bottomColor === 'blue') { // blue is default R (+X), needs to go to D (-Y)
-    rotationFn = applyWCzPrimeMove; // Rotate -90 degrees around Z-axis (X -> -Y)
+    rotationFn = applyWCzMove;      // Corrected: applyWCzMove is -PI/2 rotation, +X -> -Y
   } else if (bottomColor === 'orange') { // orange is default B (-Z), needs to go to D (-Y)
     rotationFn = applyWCxMove;      // Rotate -90 degrees around X-axis (-Z -> -Y)
   } else if (bottomColor === 'green') { // green is default L (-X), needs to go to D (-Y)
-    rotationFn = applyWCzMove;      // Rotate +90 degrees around Z-axis (-X -> -Y)
+    rotationFn = applyWCzPrimeMove; // Corrected: applyWCzPrimeMove is +PI/2 rotation, -X -> -Y
   }
   // If bottomColor is 'yellow', no rotationFn is set, so no transformation applied.
 
