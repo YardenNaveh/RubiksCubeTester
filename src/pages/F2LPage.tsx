@@ -21,10 +21,9 @@ const F2LPage: React.FC<F2LPageProps> = ({ appData }) => {
   const [scrambleString, setScrambleString] = useState("");
   const [misses, setMisses] = useState(0);
 
-  // Holds the actual CubeColor used for the current scramble, resolved from 'random' if needed
+  const initialBottomColorSetting = appData.settings.bottomColor;
   const [actualBottomColorForScramble, setActualBottomColorForScramble] = useState<CubeColor>(() => {
-    const initialSetting = appData.settings.bottomColor;
-    return initialSetting === 'random' ? COLORS[Math.floor(Math.random() * COLORS.length)] : initialSetting;
+    return initialBottomColorSetting === 'random' ? COLORS[Math.floor(Math.random() * COLORS.length)] : initialBottomColorSetting;
   });
 
   const [cubeState, setCubeState] = useState<RubiksCubeState>(createInitialCubeState(actualBottomColorForScramble));
@@ -35,9 +34,8 @@ const F2LPage: React.FC<F2LPageProps> = ({ appData }) => {
   const playSuccessSound = useSound('ding', appData.settings.muted);
   const playErrorSound = useSound('bzzt', appData.settings.muted);
 
-  // This is the setting from global state (can be 'random')
-  const bottomColorSetting = appData.settings.bottomColor;
-  console.log('[F2LPage] Render cycle. Current bottomColorSetting from appData:', bottomColorSetting);
+  // Temporarily commented out to reduce console noise during loop debugging
+  // console.log('[F2LPage] Render cycle. Current bottomColorSetting from appData:', appData.settings.bottomColor);
 
   const getScrambleOrientationContext = useCallback((bColor: CubeColor): { up: CubeColor; front: CubeColor } => {
     switch (bColor) {
@@ -52,13 +50,13 @@ const F2LPage: React.FC<F2LPageProps> = ({ appData }) => {
   }, []);
 
   const handleScramble = useCallback(() => {
-    // Determine the actual CubeColor for this scramble
-    const colorForThisScramble = bottomColorSetting === 'random' 
+    const currentBottomSetting = appData.settings.bottomColor; // Read fresh from appData prop
+    const colorForThisScramble = currentBottomSetting === 'random' 
       ? COLORS[Math.floor(Math.random() * COLORS.length)] 
-      : bottomColorSetting;
+      : currentBottomSetting;
     
     setActualBottomColorForScramble(colorForThisScramble);
-    console.log(`[F2LPage] handleScramble: Setting actualBottomColorForScramble to ${colorForThisScramble}`);
+    console.log(`[F2LPage] handleScramble: Setting actualBottomColorForScramble to ${colorForThisScramble} (derived from setting: ${currentBottomSetting})`);
 
     const { scrambleString: newScramble, finalState } = generateDetailedF2LScramble(colorForThisScramble, 20);
     setScrambleString(newScramble);
@@ -73,10 +71,10 @@ const F2LPage: React.FC<F2LPageProps> = ({ appData }) => {
       timerRef.current = null;
     }
     startTimeRef.current = null;
-  }, [bottomColorSetting]);
+  }, [appData.settings.bottomColor]); // Recreate handleScramble IF the setting from appData changes. This is correct.
 
   useEffect(() => {
-    console.log(`[F2LPage] useEffect for bottomColorSetting: ${bottomColorSetting}. Calling handleScramble.`);
+    console.log(`[F2LPage] useEffect for bottomColorSetting: ${appData.settings.bottomColor}. Calling handleScramble.`);
     handleScramble();
 
     return () => {
@@ -84,7 +82,9 @@ const F2LPage: React.FC<F2LPageProps> = ({ appData }) => {
         clearInterval(timerRef.current);
       }
     };
-  }, [bottomColorSetting, handleScramble]);
+  // This useEffect should run when appData.settings.bottomColor changes, OR when handleScramble (the function itself) changes.
+  // Since handleScramble now correctly depends on appData.settings.bottomColor, this setup is what we want.
+  }, [appData.settings.bottomColor, handleScramble]);
 
   const handlePairFound = () => {
     if (!timerRunning) {
