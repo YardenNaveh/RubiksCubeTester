@@ -1,4 +1,4 @@
-import { createInitialCubeState, generateDetailedF2LScramble, isDCrossSolved } from '../scramble';
+import { generateDetailedF2LScramble, isDCrossSolved } from '../scramble';
 
 describe('F2L Scramble Generator (Detailed State)', () => {
   test('should generate a scramble string of correct length', () => {

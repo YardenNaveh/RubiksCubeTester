@@ -1,4 +1,4 @@
-import { CubeState } from './scramble';
+import { RubiksCubeState } from './scramble';
 
 // Define the structure of a corner piece
 export interface Corner {
@@ -25,7 +25,7 @@ export interface Pair {
  * In a real implementation, this would extract actual F2L pairs from the cube state.
  * For this prototype, we'll return a simulated set of F2L pairs.
  */
-export function getUnsolvedPairs(_state: CubeState): Pair[] {
+export function getUnsolvedPairs(_state: RubiksCubeState): Pair[] {
   // For a real implementation, we would need to analyze the cube state and extract corner-edge pairs
   // that belong to F2L slots (first two layers) and are unsolved
   
@@ -90,7 +90,7 @@ export function getUnsolvedPairs(_state: CubeState): Pair[] {
  * Check if a corner and edge form a valid F2L pair
  * In a real implementation, this would check colors, positions and orientations
  */
-export function isValidPair(edgeId: string, cornerId: string, _state: CubeState): boolean {
+export function isValidPair(edgeId: string, cornerId: string, _state: RubiksCubeState): boolean {
   // For now, we'll use a simplified check based on piece IDs
   const validPairs: { [key: string]: string } = {
     "FL": "UFL",

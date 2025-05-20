@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { AppStorage, BottomColorSetting } from '../hooks/useLocalStorage';
+import { AppStorage /*, BottomColorSetting*/ } from '../hooks/useLocalStorage';
 import { useSound } from '../hooks/useSound';
 import F2LCube from '../components/f2l/F2LCube';
 import useF2LStore from '../state/f2lStore';

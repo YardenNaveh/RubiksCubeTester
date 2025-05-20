@@ -1,6 +1,5 @@
 import { createInitialCubeState, applyCubeMove, RubiksCubeState, isDCrossSolved, AllMoves } from './cubeStateUtil';
 import { CubeColor } from '../cubeConstants';
-import * as THREE from 'three'; // For applyFullCubeRotationIfNeeded
 
 // Re-export RubiksCubeState for convenience
 export type { RubiksCubeState };

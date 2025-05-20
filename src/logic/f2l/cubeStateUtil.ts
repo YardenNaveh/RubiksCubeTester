@@ -19,14 +19,10 @@ import {
   applyWCxMove,
   applyWCxPrimeMove,
   applyWCx2Move,
-  applyWCyMove,
-  applyWCyPrimeMove,
-  applyWCy2Move,
   applyWCzMove,
   applyWCzPrimeMove,
-  applyWCz2Move,
 } from './cubePiece';
-import { CubeColor, COLOR_PAIRS } from '../cubeConstants'; // For default color scheme
+import { CubeColor /*, COLOR_PAIRS*/ } from '../cubeConstants'; // COLOR_PAIRS Removed
 
 // Represents the state of a single cubie in the cube
 export interface LiveCubieState {

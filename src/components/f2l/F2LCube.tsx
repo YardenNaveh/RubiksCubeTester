@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import * as THREE from 'three';
+// import * as THREE from 'three'; // THREE is used for types like THREE.Vector3 implicitly via other imports
 import { RubiksCubeState } from '../../logic/f2l/cubeStateUtil'; // Import the detailed state type
 import { isValidPair } from '../../logic/f2l/pairDetector';
 import { CubeColor } from '../../logic/cubeConstants';

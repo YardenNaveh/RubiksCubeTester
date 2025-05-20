@@ -1,9 +1,9 @@
-import { createSolvedCube } from '../scramble';
+import { createInitialCubeState } from '../scramble';
 import { getUnsolvedPairs, isValidPair } from '../pairDetector';
 
 describe('F2L Pair Detector', () => {
   test('should detect valid pairs', () => {
-    const cubeState = createSolvedCube();
+    const cubeState = createInitialCubeState();
     
     // Test known valid pairs
     expect(isValidPair('FL', 'UFL', cubeState)).toBe(true);
@@ -13,7 +13,7 @@ describe('F2L Pair Detector', () => {
   });
 
   test('should reject invalid pairs', () => {
-    const cubeState = createSolvedCube();
+    const cubeState = createInitialCubeState();
     
     // Test known invalid pairs
     expect(isValidPair('FL', 'UFR', cubeState)).toBe(false);
@@ -23,7 +23,7 @@ describe('F2L Pair Detector', () => {
   });
 
   test('should return 4 unsolved pairs', () => {
-    const cubeState = createSolvedCube();
+    const cubeState = createInitialCubeState();
     const pairs = getUnsolvedPairs(cubeState);
     
     expect(pairs.length).toBe(4);
