@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AppStorage /*, BottomColorSetting*/ } from '../hooks/useLocalStorage';
 import { useSound } from '../hooks/useSound';
 import F2LCube from '../components/f2l/F2LCube';
+import CelebrationOverlay from '../components/f2l/CelebrationOverlay';
 import useF2LStore from '../state/f2lStore';
 import { RubiksCubeState, createInitialCubeState, generateDetailedF2LScramble } from '../logic/f2l/scramble';
 import { CubeColor, COLORS } from '../logic/cubeConstants';
@@ -20,6 +21,7 @@ const F2LPage: React.FC<F2LPageProps> = ({ appData }) => {
   const [time, setTime] = useState(0);
   const [scrambleString, setScrambleString] = useState("");
   const [misses, setMisses] = useState(0);
+  const [isCelebrating, setIsCelebrating] = useState(false);
 
   const initialBottomColorSetting = appData.settings.bottomColor;
   const [actualBottomColorForScramble, setActualBottomColorForScramble] = useState<CubeColor>(() => {
@@ -130,10 +132,11 @@ const F2LPage: React.FC<F2LPageProps> = ({ appData }) => {
     const finalTime = startTimeRef.current ? Date.now() - startTimeRef.current : 0;
     recordScrambleComplete(finalTime, misses);
     
+    setIsCelebrating(true);
     setTimeout(() => {
-      alert("Nice! New scramble...");
+      setIsCelebrating(false);
       handleScramble();
-    }, 1000);
+    }, 2000);
   };
 
   const formatTime = (ms: number) => {
@@ -149,10 +152,11 @@ const F2LPage: React.FC<F2LPageProps> = ({ appData }) => {
     : "Click Scramble to start";
 
   return (
-    <div className="flex flex-col items-center w-full gap-4">
+    <div className="flex flex-col items-center w-full gap-4 relative">
+      <CelebrationOverlay isActive={isCelebrating} />
       <h1 className="text-xl font-bold text-sky-400">F2L Pair Ninja</h1>
 
-      <div className="w-4/5 max-h-[300px] aspect-square bg-slate-950 rounded-lg overflow-hidden">
+      <div className="w-4/5 max-h-[300px] aspect-square bg-slate-950 rounded-lg overflow-hidden relative">
         <F2LCube 
           onPairFound={handlePairFound} 
           onMiss={handleMiss} 
