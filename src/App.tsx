@@ -48,7 +48,31 @@ function App() {
     if ('serviceWorker' in navigator && import.meta.env.PROD) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).then(registration => {
-          console.log('SW registered: ', registration);
+          // Proactively check for an updated SW
+          registration.update().catch(() => {});
+
+          // If there’s already a waiting SW, activate it now.
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && registration.waiting) {
+                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          });
+
+          // Reload once when the new SW takes control so clients pick up the latest assets.
+          let hasRefreshed = false;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (hasRefreshed) return;
+            hasRefreshed = true;
+            window.location.reload();
+          });
         }).catch(registrationError => {
           console.log('SW registration failed: ', registrationError);
         });
