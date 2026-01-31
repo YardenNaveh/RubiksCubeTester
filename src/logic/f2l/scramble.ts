@@ -5,58 +5,116 @@ import { CubeColor } from '../cubeConstants';
 export type { RubiksCubeState };
 export { createInitialCubeState }; // Export the state creation function
 
-// Define moves that primarily affect F2L pairs while keeping D-cross relatively easy to preserve
-type F2LScrambleGenMove = 
-    'U' | "U'" | 'U2' | 
-    'R' | "R'" | 'R2' | 
-    'L' | "L'" | 'L2' | 
-    'F' | "F'" | 'F2' | 
-    'B' | "B'" | 'B2';
+type UVariation = 'U' | "U'" | 'U2';
+type SetupMove = 'R' | "R'" | 'L' | "L'" | 'F' | "F'" | 'B' | "B'";
 
-const ALL_F2L_SCRAMBLE_GEN_MOVES: F2LScrambleGenMove[] = [
-    'U', "U'", 'U2', 'R', "R'", 'R2', 'L', "L'", 'L2', 
-    'F', "F'", 'F2', 'B', "B'", 'B2'
-];
+const U_VARIATIONS: UVariation[] = ['U', "U'", 'U2'];
+const SETUP_MOVES: SetupMove[] = ['R', "R'", 'L', "L'", 'F', "F'", 'B', "B'"];
+
+function getRandomUMove(): UVariation {
+  return U_VARIATIONS[Math.floor(Math.random() * U_VARIATIONS.length)];
+}
+
+function getRandomSetupMove(): SetupMove {
+  return SETUP_MOVES[Math.floor(Math.random() * SETUP_MOVES.length)];
+}
+
+function inverseMove(move: SetupMove): SetupMove {
+  // For quarter turns only (we only use these as setup moves)
+  return move.endsWith("'") ? (move.slice(0, -1) as SetupMove) : ((move + "'") as SetupMove);
+}
 
 /**
- * Generates a random F2L friendly move
+ * Simplifies consecutive moves by canceling/combining where possible.
+ * e.g., U U -> U2, U U' -> (nothing), R R' -> (nothing)
  */
-function getRandomF2LScrambleGenMove(): F2LScrambleGenMove {
-  return ALL_F2L_SCRAMBLE_GEN_MOVES[Math.floor(Math.random() * ALL_F2L_SCRAMBLE_GEN_MOVES.length)];
+function simplifyMoves(moves: AllMoves[]): AllMoves[] {
+  if (moves.length < 2) return moves;
+  
+  const result: AllMoves[] = [];
+  
+  for (const move of moves) {
+    if (result.length === 0) {
+      result.push(move);
+      continue;
+    }
+    
+    const lastMove = result[result.length - 1];
+    const lastBase = lastMove.replace(/['2]/g, '');
+    const currentBase = move.replace(/['2]/g, '');
+    
+    // Only combine moves on the same face
+    if (lastBase !== currentBase) {
+      result.push(move);
+      continue;
+    }
+    
+    // Calculate total rotation
+    const getRotation = (m: string): number => {
+      if (m.includes('2')) return 2;
+      if (m.includes("'")) return 3; // -1 mod 4 = 3
+      return 1;
+    };
+    
+    const totalRotation = (getRotation(lastMove) + getRotation(move)) % 4;
+    
+    // Remove last move and add combined result
+    result.pop();
+    
+    if (totalRotation === 0) {
+      // Moves cancel out - don't add anything
+    } else if (totalRotation === 1) {
+      result.push(currentBase as AllMoves);
+    } else if (totalRotation === 2) {
+      result.push((currentBase + '2') as AllMoves);
+    } else if (totalRotation === 3) {
+      result.push((currentBase + "'") as AllMoves);
+    }
+  }
+  
+  return result;
 }
 
 /**
  * Generate a random scramble for F2L practice using the detailed cube state.
- * Only uses F2L friendly moves to keep the cross solved.
+ * Uses cross-preserving conjugate patterns so it stays fast and works for all bottom colors.
  * @param initialBottomColor The bottom color defining the cube's base orientation.
- * @param moveCount Number of random moves to generate.
+ * @param moveCount Approximate number of moves to generate.
  * @returns Object with scramble string and the resulting detailed RubiksCubeState.
  */
 export function generateDetailedF2LScramble(
   initialBottomColor: CubeColor = 'yellow',
-  moveCount: number = 20 // Increased move count for better scrambling
+  moveCount: number = 20
 ): { scrambleString: string; finalState: RubiksCubeState } {
   
   let currentState = createInitialCubeState(initialBottomColor);
-  const scrambleMoves: F2LScrambleGenMove[] = [];
+  const moves: AllMoves[] = [];
 
-  for (let i = 0; i < moveCount; i++) {
-    const move = getRandomF2LScrambleGenMove();
-    scrambleMoves.push(move);
-    // Directly use the enhanced applyCubeMove from cubeStateUtil
-    currentState = applyCubeMove(currentState, move as AllMoves);
+  // Generate ~moveCount moves using conjugates: A (U/U2/U') A^-1, optionally with extra U moves.
+  // This preserves the D-cross (in ideal math). Our cross-check uses exact equality today,
+  // so we additionally keep patterns short to minimize floating drift.
+  while (moves.length < moveCount) {
+    const setup = getRandomSetupMove();
+    const inv = inverseMove(setup);
+
+    // 1–3 U moves inside the conjugate
+    const insideCount = 1 + Math.floor(Math.random() * 3);
+    moves.push(setup);
+    for (let i = 0; i < insideCount; i++) moves.push(getRandomUMove());
+    moves.push(inv);
+
+    // 50% chance to add an extra U between conjugates to increase variety
+    if (Math.random() < 0.5 && moves.length < moveCount) moves.push(getRandomUMove());
   }
 
-  // To actually ensure the D-cross is solved after a more varied scramble, 
-  // one would typically scramble fully then solve the cross.
-  // For this trainer, if we stick to moves that don't affect D-layer pieces' relative state,
-  // and ensure D-layer centers are fixed, the cross remains solved by definition.
-  // The current CUBIE_DEFS in cubeStateUtil.ts define a solved D-cross for yellow bottom.
-  // If initialBottomColor is different, createInitialCubeState would need to orient the whole cube.
+  const simplifiedMoves = simplifyMoves(moves).slice(0, Math.max(1, moveCount));
 
-  // For now, the scramble string will be diverse, but visual state only changes for U-moves.
+  for (const move of simplifiedMoves) {
+    currentState = applyCubeMove(currentState, move);
+  }
+
   return {
-    scrambleString: scrambleMoves.join(' '),
+    scrambleString: simplifiedMoves.join(' '),
     finalState: currentState, 
   };
 }

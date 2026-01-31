@@ -1,4 +1,5 @@
 import { RubiksCubeState } from './scramble';
+import { COLOR_PAIRS, CubeColor } from '../cubeConstants';
 
 // Define the structure of a corner piece
 export interface Corner {
@@ -21,83 +22,96 @@ export interface Pair {
   isSolved: boolean;
 }
 
-/**
- * In a real implementation, this would extract actual F2L pairs from the cube state.
- * For this prototype, we'll return a simulated set of F2L pairs.
- */
-export function getUnsolvedPairs(_state: RubiksCubeState): Pair[] {
-  // For a real implementation, we would need to analyze the cube state and extract corner-edge pairs
-  // that belong to F2L slots (first two layers) and are unsolved
-  
-  // For now, we'll simulate 4 pairs with different IDs
-  return [
-    {
-      corner: { 
-        id: "UFL", 
-        colors: ["white", "green", "red"], 
-        position: "UFL" 
-      },
-      edge: { 
-        id: "FL", 
-        colors: ["green", "red"], 
-        position: "UL" 
-      },
-      isSolved: false
-    },
-    {
-      corner: { 
-        id: "UFR", 
-        colors: ["white", "red", "blue"], 
-        position: "URF" 
-      },
-      edge: { 
-        id: "FR", 
-        colors: ["red", "blue"], 
-        position: "UR" 
-      },
-      isSolved: false
-    },
-    {
-      corner: { 
-        id: "UBL", 
-        colors: ["white", "orange", "green"], 
-        position: "ULB" 
-      },
-      edge: { 
-        id: "BL", 
-        colors: ["orange", "green"], 
-        position: "UB" 
-      },
-      isSolved: false
-    },
-    {
-      corner: { 
-        id: "UBR", 
-        colors: ["white", "blue", "orange"], 
-        position: "UBR" 
-      },
-      edge: { 
-        id: "BR", 
-        colors: ["blue", "orange"], 
-        position: "BR" 
-      },
-      isSolved: false
-    }
-  ];
+function getPieceColors(state: RubiksCubeState, pieceId: string): CubeColor[] {
+  const piece = state[pieceId];
+  if (!piece) return [];
+  // sticker colors are absolute and stable
+  const colors = piece.definition.stickers.map(s => s.color) as CubeColor[];
+  // dedupe
+  return Array.from(new Set(colors));
+}
+
+function isCorner(state: RubiksCubeState, pieceId: string): boolean {
+  const piece = state[pieceId];
+  return piece?.definition.type === 'corner';
+}
+
+function isEdge(state: RubiksCubeState, pieceId: string): boolean {
+  const piece = state[pieceId];
+  return piece?.definition.type === 'edge';
+}
+
+function isF2LCorner(state: RubiksCubeState, cornerId: string, bottomColor: CubeColor): boolean {
+  if (!isCorner(state, cornerId)) return false;
+  const colors = getPieceColors(state, cornerId);
+  return colors.includes(bottomColor);
+}
+
+function isF2LEdge(state: RubiksCubeState, edgeId: string, bottomColor: CubeColor): boolean {
+  if (!isEdge(state, edgeId)) return false;
+  const topColor = COLOR_PAIRS[bottomColor];
+  const colors = getPieceColors(state, edgeId);
+  // Middle-layer edges relative to bottom/top are those that include neither bottom nor top.
+  return !colors.includes(bottomColor) && !colors.includes(topColor) && colors.length === 2;
 }
 
 /**
- * Check if a corner and edge form a valid F2L pair
- * In a real implementation, this would check colors, positions and orientations
+ * Get the list of valid F2L pairs for a given bottom color.
  */
-export function isValidPair(edgeId: string, cornerId: string, _state: RubiksCubeState): boolean {
-  // For now, we'll use a simplified check based on piece IDs
-  const validPairs: { [key: string]: string } = {
-    "FL": "UFL",
-    "FR": "UFR",
-    "BL": "UBL",
-    "BR": "UBR",
-  };
+export function getUnsolvedPairs(state: RubiksCubeState, bottomColor: CubeColor = 'yellow'): Pair[] {
+  const topColor = COLOR_PAIRS[bottomColor];
 
-  return validPairs[edgeId] === cornerId;
+  const corners = Object.keys(state).filter(id => isF2LCorner(state, id, bottomColor));
+  const edges = Object.keys(state).filter(id => isF2LEdge(state, id, bottomColor));
+
+  // For each eligible edge, find the unique corner that contains both edge colors + bottomColor
+  const pairs: Pair[] = [];
+  for (const edgeId of edges) {
+    const eColors = getPieceColors(state, edgeId);
+    const matchingCorners = corners.filter(cornerId => {
+      const cColors = getPieceColors(state, cornerId);
+      return cColors.includes(bottomColor) && eColors.every(c => cColors.includes(c));
+    });
+
+    if (matchingCorners.length === 1) {
+      const cornerId = matchingCorners[0];
+      pairs.push({
+        corner: { id: cornerId, colors: getPieceColors(state, cornerId), position: cornerId },
+        edge: { id: edgeId, colors: eColors, position: edgeId },
+        isSolved: false,
+      });
+    }
+  }
+
+  // If something goes weird, return empty rather than lying
+  // (UI doesn't depend on this today; it’s mostly for tests/debug).
+  if (pairs.length !== 4) {
+    // eslint-disable-next-line no-console
+    console.warn('[pairDetector] expected 4 F2L pairs but got', pairs.length, { bottomColor, topColor });
+  }
+
+  return pairs;
+}
+
+/**
+ * Check if a corner and edge form a valid F2L pair for the given bottom color.
+ * 
+ * @param edgeId - The definition ID of the edge piece
+ * @param cornerId - The definition ID of the corner piece
+ * @param _state - The cube state (reserved for future position-based validation)
+ * @param bottomColor - The color on the bottom face (determines which corners are F2L corners)
+ * @returns true if the edge and corner form a valid F2L pair
+ */
+export function isValidPair(
+  edgeId: string, 
+  cornerId: string, 
+  state: RubiksCubeState,
+  bottomColor: CubeColor = 'yellow'
+): boolean {
+  if (!isF2LEdge(state, edgeId, bottomColor)) return false;
+  if (!isF2LCorner(state, cornerId, bottomColor)) return false;
+
+  const edgeColors = getPieceColors(state, edgeId);
+  const cornerColors = getPieceColors(state, cornerId);
+  return edgeColors.every(c => cornerColors.includes(c));
 } 

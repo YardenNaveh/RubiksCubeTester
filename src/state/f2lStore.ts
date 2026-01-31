@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export interface F2LStats {
   totalScrambles: number;
@@ -22,23 +22,43 @@ const DEFAULT_F2L_STATS: F2LStats = {
   currentStreak: 0,
 };
 
-export function useF2LStore() {
-  const [stats, setStats] = useState<F2LStats>(DEFAULT_F2L_STATS);
+// Helper to merge saved data with defaults (handles schema migrations)
+function mergeWithDefaults(saved: Partial<F2LStats>): F2LStats {
+  return {
+    totalScrambles: saved.totalScrambles ?? DEFAULT_F2L_STATS.totalScrambles,
+    totalPairsFound: saved.totalPairsFound ?? DEFAULT_F2L_STATS.totalPairsFound,
+    misses: saved.misses ?? DEFAULT_F2L_STATS.misses,
+    times: Array.isArray(saved.times) ? saved.times : DEFAULT_F2L_STATS.times,
+    bestTime: saved.bestTime ?? DEFAULT_F2L_STATS.bestTime,
+    bestStreak: saved.bestStreak ?? DEFAULT_F2L_STATS.bestStreak,
+    currentStreak: saved.currentStreak ?? DEFAULT_F2L_STATS.currentStreak,
+  };
+}
 
-  // Load stats from localStorage on first render
-  useEffect(() => {
-    try {
-      const savedStats = localStorage.getItem(STORAGE_KEY);
-      if (savedStats) {
-        setStats(JSON.parse(savedStats));
-      }
-    } catch (error) {
-      console.error('Failed to load F2L stats:', error);
+// Load initial state from localStorage (runs once, synchronously)
+function getInitialStats(): F2LStats {
+  try {
+    const savedStats = localStorage.getItem(STORAGE_KEY);
+    if (savedStats) {
+      const parsed = JSON.parse(savedStats);
+      return mergeWithDefaults(parsed);
     }
-  }, []);
+  } catch (error) {
+    console.error('Failed to load F2L stats:', error);
+  }
+  return DEFAULT_F2L_STATS;
+}
 
-  // Save to localStorage whenever stats change
+export function useF2LStore() {
+  const [stats, setStats] = useState<F2LStats>(getInitialStats);
+  const isInitialized = useRef(false);
+
+  // Save to localStorage whenever stats change (skip first render to avoid overwriting)
   useEffect(() => {
+    if (!isInitialized.current) {
+      isInitialized.current = true;
+      return;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
     } catch (error) {

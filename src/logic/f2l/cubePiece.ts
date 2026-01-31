@@ -52,6 +52,15 @@ function applyRotation(position: THREE.Vector3, orientation: THREE.Quaternion, a
   newPosition.applyMatrix4(rotationMatrix);
   const rotationQuaternion = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
   newOrientation.premultiply(rotationQuaternion);
+  // Snap to the integer cube grid to avoid floating drift breaking layer selection
+  // (e.g., x=0.499999999 causing x>0.5 checks to fail).
+  newPosition.set(
+    Math.round(newPosition.x),
+    Math.round(newPosition.y),
+    Math.round(newPosition.z)
+  );
+  // Keep quaternions stable.
+  newOrientation.normalize();
   return { position: newPosition, orientation: newOrientation };
 }
 

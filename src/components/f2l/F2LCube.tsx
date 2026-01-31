@@ -45,8 +45,8 @@ const F2LCube: React.FC<F2LCubeProps> = ({
       const edgeId = selectedPieceType === 'edge' ? selectedPieceId : id;
       const cornerId = selectedPieceType === 'corner' ? selectedPieceId : id;
 
-      // Note: isValidPair still uses the simplified ID check for now
-      if (isValidPair(edgeId, cornerId, cubeState as any)) { // Pass state (might need type assertion)
+      // Check if this is a valid F2L pair for the current bottom color
+      if (isValidPair(edgeId, cornerId, cubeState as any, bottomColor)) {
         const newSolved = new Set(solvedPairs).add(edgeId).add(cornerId);
         setSolvedPairs(newSolved);
         setSelectedPieceId(null);
