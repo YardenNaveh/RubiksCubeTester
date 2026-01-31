@@ -62,7 +62,9 @@ function App() {
           </main>
           {/* Footer links - adjust color */}
            <footer className="p-4 text-center text-sm text-slate-400">
-             <Link to="/stats" className="hover:text-sky-400">View Stats</Link>
+             <Link to="/stats" className="hover:text-sky-400">Color Sensei Stats</Link>
+             <span className="mx-2 text-slate-600">|</span>
+             <Link to="/f2l/stats" className="hover:text-sky-400">F2L Stats</Link>
            </footer>
         </div>
       </div>

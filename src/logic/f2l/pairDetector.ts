@@ -1,5 +1,6 @@
 import { RubiksCubeState } from './scramble';
 import { COLOR_PAIRS, CubeColor } from '../cubeConstants';
+import { isPieceSolved } from './cubeStateUtil';
 
 // Define the structure of a corner piece
 export interface Corner {
@@ -115,3 +116,25 @@ export function isValidPair(
   const cornerColors = getPieceColors(state, cornerId);
   return edgeColors.every(c => cornerColors.includes(c));
 } 
+
+/**
+ * Counts fully solved F2L pairs (both the corner + its matching edge are in their solved
+ * positions & orientations for the current bottom color).
+ */
+export function countSolvedF2LPairs(state: RubiksCubeState, bottomColor: CubeColor = 'yellow'): number {
+  // Identify the four target pairs by color-composition (bottomColor + edge colors).
+  const pairs = getUnsolvedPairs(state, bottomColor);
+  let solved = 0;
+
+  for (const pair of pairs) {
+    const edge = state[pair.edge.id];
+    const corner = state[pair.corner.id];
+    if (!edge || !corner) continue;
+
+    if (isPieceSolved(edge) && isPieceSolved(corner)) {
+      solved++;
+    }
+  }
+
+  return solved;
+}

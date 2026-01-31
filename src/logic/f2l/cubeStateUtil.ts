@@ -155,6 +155,23 @@ export type AllMoves =
   'F' | "F'" | 'F2' | 
   'B' | "B'" | 'B2'; // Extendable to D, M, E, S, x, y, z etc.
 
+export function isPieceSolved(piece: LiveCubieState): boolean {
+  // Compare with a small epsilon to avoid floating point drift from repeated quaternion ops.
+  const posEps = 1e-4;
+  const quatEps = 1e-4;
+
+  if (piece.currentPosition.distanceTo(piece.definition.initialPosition) > posEps) {
+    return false;
+  }
+
+  // Quaternion epsilon compare (account for q and -q representing the same rotation)
+  const q1 = piece.currentOrientation;
+  const q2 = piece.definition.initialOrientation;
+  const directDiff = Math.abs(q1.x - q2.x) + Math.abs(q1.y - q2.y) + Math.abs(q1.z - q2.z) + Math.abs(q1.w - q2.w);
+  const negDiff = Math.abs(q1.x + q2.x) + Math.abs(q1.y + q2.y) + Math.abs(q1.z + q2.z) + Math.abs(q1.w + q2.w);
+  return Math.min(directDiff, negDiff) <= quatEps;
+}
+
 export function applyCubeMove(state: RubiksCubeState, move: AllMoves): RubiksCubeState {
   const newState: RubiksCubeState = {};
 
@@ -232,23 +249,7 @@ export function isDCrossSolved(state: RubiksCubeState, bottomColor: CubeColor = 
     for (const id of dCrossPieceIds) {
         const piece = state[id];
         if (!piece) return false; // Should not happen
-
-        // Compare with a small epsilon to avoid floating point drift from repeated quaternion ops.
-        const posEps = 1e-4;
-        const quatEps = 1e-4;
-
-        // Position epsilon compare
-        if (piece.currentPosition.distanceTo(piece.definition.initialPosition) > posEps) {
-            return false;
-        }
-        // Quaternion epsilon compare (account for q and -q representing the same rotation)
-        const q1 = piece.currentOrientation;
-        const q2 = piece.definition.initialOrientation;
-        const directDiff = Math.abs(q1.x - q2.x) + Math.abs(q1.y - q2.y) + Math.abs(q1.z - q2.z) + Math.abs(q1.w - q2.w);
-        const negDiff = Math.abs(q1.x + q2.x) + Math.abs(q1.y + q2.y) + Math.abs(q1.z + q2.z) + Math.abs(q1.w + q2.w);
-        if (Math.min(directDiff, negDiff) > quatEps) {
-            return false;
-        }
+        if (!isPieceSolved(piece)) return false;
     }
     return true;
 } 

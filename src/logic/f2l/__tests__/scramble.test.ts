@@ -1,5 +1,6 @@
 import { generateDetailedF2LScramble, isDCrossSolved, createInitialCubeState } from '../scramble';
 import { applyCubeMove } from '../cubeStateUtil';
+import { countSolvedF2LPairs } from '../pairDetector';
 
 describe('F2L Scramble Generator (Detailed State)', () => {
   test('initial state should have solved cross for all colors', () => {
@@ -49,6 +50,8 @@ describe('F2L Scramble Generator (Detailed State)', () => {
       
       // Verify D-cross is still solved using the detailed state checker
       expect(isDCrossSolved(finalState, initialBottomColor)).toBe(true);
+      // Verify no fully-solved F2L pair exists at start
+      expect(countSolvedF2LPairs(finalState, initialBottomColor)).toBe(0);
     }
   });
 

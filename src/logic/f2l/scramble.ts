@@ -1,5 +1,6 @@
 import { createInitialCubeState, applyCubeMove, RubiksCubeState, isDCrossSolved, AllMoves } from './cubeStateUtil';
 import { CubeColor } from '../cubeConstants';
+import { countSolvedF2LPairs } from './pairDetector';
 
 // Re-export RubiksCubeState for convenience
 export type { RubiksCubeState };
@@ -87,36 +88,57 @@ export function generateDetailedF2LScramble(
   moveCount: number = 20
 ): { scrambleString: string; finalState: RubiksCubeState } {
   
-  let currentState = createInitialCubeState(initialBottomColor);
-  const moves: AllMoves[] = [];
+  // Rejection-sampling: generate cross-solved scrambles until none of the 4 F2L pairs
+  // are already fully solved (corner+edge both solved).
+  const maxAttempts = 200;
 
-  // Generate ~moveCount moves using conjugates: A (U/U2/U') A^-1, optionally with extra U moves.
-  // This preserves the D-cross (in ideal math). Our cross-check uses exact equality today,
-  // so we additionally keep patterns short to minimize floating drift.
-  while (moves.length < moveCount) {
-    const setup = getRandomSetupMove();
-    const inv = inverseMove(setup);
+  let best: { moves: AllMoves[]; state: RubiksCubeState; solvedPairs: number } | null = null;
 
-    // 1–3 U moves inside the conjugate
-    const insideCount = 1 + Math.floor(Math.random() * 3);
-    moves.push(setup);
-    for (let i = 0; i < insideCount; i++) moves.push(getRandomUMove());
-    moves.push(inv);
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    let currentState = createInitialCubeState(initialBottomColor);
+    const moves: AllMoves[] = [];
 
-    // 50% chance to add an extra U between conjugates to increase variety
-    if (Math.random() < 0.5 && moves.length < moveCount) moves.push(getRandomUMove());
+    while (moves.length < moveCount) {
+      const setup = getRandomSetupMove();
+      const inv = inverseMove(setup);
+
+      // 1–3 U moves inside the conjugate
+      const insideCount = 1 + Math.floor(Math.random() * 3);
+      moves.push(setup);
+      for (let i = 0; i < insideCount; i++) moves.push(getRandomUMove());
+      moves.push(inv);
+
+      // 50% chance to add an extra U between conjugates to increase variety
+      if (Math.random() < 0.5 && moves.length < moveCount) moves.push(getRandomUMove());
+    }
+
+    const simplifiedMoves = simplifyMoves(moves).slice(0, Math.max(1, moveCount));
+
+    for (const move of simplifiedMoves) {
+      currentState = applyCubeMove(currentState, move);
+    }
+
+    // Safety: cross should remain solved
+    if (!isDCrossSolved(currentState, initialBottomColor)) continue;
+
+    const solvedPairs = countSolvedF2LPairs(currentState, initialBottomColor);
+    if (!best || solvedPairs < best.solvedPairs) {
+      best = { moves: simplifiedMoves, state: currentState, solvedPairs };
+      // Early exit if perfect.
+      if (solvedPairs === 0) {
+        return { scrambleString: simplifiedMoves.join(' '), finalState: currentState };
+      }
+    }
   }
 
-  const simplifiedMoves = simplifyMoves(moves).slice(0, Math.max(1, moveCount));
-
-  for (const move of simplifiedMoves) {
-    currentState = applyCubeMove(currentState, move);
+  // Fallback: return the best attempt we found.
+  if (best) {
+    return { scrambleString: best.moves.join(' '), finalState: best.state };
   }
 
-  return {
-    scrambleString: simplifiedMoves.join(' '),
-    finalState: currentState, 
-  };
+  // Extreme fallback: do nothing
+  const state = createInitialCubeState(initialBottomColor);
+  return { scrambleString: '', finalState: state };
 }
 
 // We keep isCrossSolved here for the test file, pointing to the utility function

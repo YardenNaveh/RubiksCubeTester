@@ -93,7 +93,7 @@ const StatsPage: React.FC<StatsPageProps> = ({ appData, setAppData }) => {
 
   return (
     <div className="flex flex-col p-4 bg-slate-800 rounded-lg shadow-md space-y-4">
-      <h1 className="text-2xl font-semibold text-center text-slate-100">Statistics</h1>
+      <h1 className="text-2xl font-semibold text-center text-slate-100">Color Sensei Stats</h1>
 
       <div className="grid grid-cols-2 gap-4 text-center">
         <div className="bg-slate-700 p-3 rounded">
