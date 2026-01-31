@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting…</title>
+  </head>
+  <body>
+    <script>
+      // GitHub Pages SPA fallback.
+      // Based on https://github.com/rafgraph/spa-github-pages
+      (function () {
+        var l = window.location;
+        var pathSegmentsToKeep = 1; // repo name, e.g. /RubiksCubeTester
+
+        l.replace(
+          l.protocol +
+            '//' +
+            l.hostname +
+            (l.port ? ':' + l.port : '') +
+            l.pathname
+              .split('/')
+              .slice(0, 1 + pathSegmentsToKeep)
+              .join('/') +
+            '/?p=' +
+            encodeURIComponent(l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/')) +
+            (l.search ? '&q=' + encodeURIComponent(l.search.slice(1)) : '') +
+            (l.hash ? '&h=' + encodeURIComponent(l.hash.slice(1)) : '')
+        );
+      })();
+    </script>
+  </body>
+</html>
+

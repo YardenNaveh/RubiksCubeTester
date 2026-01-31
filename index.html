@@ -7,7 +7,29 @@
     <meta name="theme-color" content="#3B82F6" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rubik's Cube Trainer</title>
-    <script type="module" crossorigin src="/RubiksCubeTester/assets/index-wx4ZgJu8.js"></script>
+    <script>
+      // GitHub Pages SPA fallback: restore the intended client-side route after 404.html redirect.
+      (function () {
+        var l = window.location;
+        var params = new URLSearchParams(l.search);
+        var p = params.get('p');
+        if (!p) return;
+
+        var q = params.get('q');
+        var h = params.get('h');
+
+        var newPath =
+          l.pathname.replace(/\/$/, '') +
+          '/' +
+          decodeURIComponent(p) +
+          (q ? '?' + decodeURIComponent(q) : '') +
+          (h ? '#' + decodeURIComponent(h) : '');
+
+        // Clean the URL (remove the ?p=... params)
+        window.history.replaceState(null, '', newPath);
+      })();
+    </script>
+    <script type="module" crossorigin src="/RubiksCubeTester/assets/index-CB-oWiJ3.js"></script>
     <link rel="stylesheet" crossorigin href="/RubiksCubeTester/assets/index-BqU0VUXX.css">
   </head>
   <body>
