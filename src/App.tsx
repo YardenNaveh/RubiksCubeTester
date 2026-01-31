@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import DrillPage from './pages/DrillPage';
 import StatsPage from './pages/StatsPage';
 import F2LNinjaPage from './pages/F2LPage';
@@ -8,6 +8,37 @@ import Header from './components/Header';
 import { useEffect } from 'react';
 import { BottomColorSetting } from './hooks/useLocalStorage';
 import './App.css';
+
+function FooterNav() {
+  const location = useLocation();
+  const path = location.pathname;
+
+  const isF2L = path.startsWith('/f2l');
+  const isF2LStats = path === '/f2l/stats';
+  const isColorStats = path === '/stats';
+
+  if (isF2L) {
+    return (
+      <footer className="p-4 text-center text-sm text-slate-400">
+        {isF2LStats ? (
+          <Link to="/f2l" className="hover:text-sky-400">Back to F2L</Link>
+        ) : (
+          <Link to="/f2l/stats" className="hover:text-sky-400">View F2L Stats</Link>
+        )}
+      </footer>
+    );
+  }
+
+  return (
+    <footer className="p-4 text-center text-sm text-slate-400">
+      {isColorStats ? (
+        <Link to="/color-sensei" className="hover:text-sky-400">Back to Color Sensei</Link>
+      ) : (
+        <Link to="/stats" className="hover:text-sky-400">View Color Sensei Stats</Link>
+      )}
+    </footer>
+  );
+}
 
 function App() {
   const [appData, setAppData] = useAppStorage();
@@ -60,12 +91,7 @@ function App() {
               <Route path="*" element={<Navigate to="/color-sensei" replace />} />
             </Routes>
           </main>
-          {/* Footer links - adjust color */}
-           <footer className="p-4 text-center text-sm text-slate-400">
-             <Link to="/stats" className="hover:text-sky-400">Color Sensei Stats</Link>
-             <span className="mx-2 text-slate-600">|</span>
-             <Link to="/f2l/stats" className="hover:text-sky-400">F2L Stats</Link>
-           </footer>
+          <FooterNav />
         </div>
       </div>
     </BrowserRouter>
