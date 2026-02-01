@@ -17,15 +17,6 @@ const BASE_PLASTIC_COLOR = '#222222';
 const SELECTED_PLASTIC_COLOR = '#111111'; // Black for highlight
 const SELECTED_BORDER_COLOR = '#555555'; // Dark gray border for highlighted stickers
 
-// 5x5 grid of dot positions on sticker
-const DOT_GRID_POSITIONS: [number, number][] = [];
-const DOT_SPACING = 0.16;
-for (let row = -2; row <= 2; row++) {
-  for (let col = -2; col <= 2; col++) {
-    DOT_GRID_POSITIONS.push([col * DOT_SPACING, row * DOT_SPACING]);
-  }
-}
-
 const F2LCubie: React.FC<F2LCubieProps> = ({ liveState, onClick, selected, solved }) => {
   const groupRef = useRef<THREE.Group>(null);
   // Store materials directly in ref, keyed by face sticker ID (e.g. UFR-U, UFR-F)
@@ -41,9 +32,9 @@ const F2LCubie: React.FC<F2LCubieProps> = ({ liveState, onClick, selected, solve
     side: THREE.DoubleSide 
   }), []);
   
-  // Small circle geometry for dots
-  const dotGeometry = useMemo(() => new THREE.CircleGeometry(0.025, 6), []);
-  const dotMaterial = useMemo(() => new THREE.MeshBasicMaterial({ 
+  // X shape geometry for selected stickers (two crossed bars)
+  const xBarGeometry = useMemo(() => new THREE.PlaneGeometry(0.35, 0.04), []);
+  const xMaterial = useMemo(() => new THREE.MeshBasicMaterial({ 
     color: '#000000',
     side: THREE.DoubleSide,
   }), []);
@@ -108,13 +99,20 @@ const F2LCubie: React.FC<F2LCubieProps> = ({ liveState, onClick, selected, solve
         const borderPos = sticker.normal.clone().multiplyScalar(STICKER_OFFSET - 0.001);
         const stickerQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), sticker.normal);
         
-        // Calculate local axes for positioning dots on the sticker plane
-        const localX = new THREE.Vector3(1, 0, 0).applyQuaternion(stickerQuat);
-        const localY = new THREE.Vector3(0, 1, 0).applyQuaternion(stickerQuat);
+        // Position for X mark
+        const xPos = stickerPos.clone().add(sticker.normal.clone().multiplyScalar(0.002));
+        
+        // Create rotated quaternions for the X bars (45° and -45°)
+        const bar1Quat = stickerQuat.clone().multiply(
+          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 4)
+        );
+        const bar2Quat = stickerQuat.clone().multiply(
+          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI / 4)
+        );
         
         return (
           <group key={materialKey}>
-            {/* Cyan border behind sticker when selected */}
+            {/* Border behind sticker when selected */}
             {selected && (
               <mesh
                 geometry={stickerBorderGeometry}
@@ -130,23 +128,23 @@ const F2LCubie: React.FC<F2LCubieProps> = ({ liveState, onClick, selected, solve
               position={stickerPos}
               quaternion={stickerQuat}
             />
-            {/* Dot grid on sticker when selected */}
-            {selected && DOT_GRID_POSITIONS.map(([dx, dy], i) => {
-              const dotPos = stickerPos.clone()
-                .add(sticker.normal.clone().multiplyScalar(0.002))
-                .add(localX.clone().multiplyScalar(dx))
-                .add(localY.clone().multiplyScalar(dy));
-              
-              return (
+            {/* X mark on sticker when selected */}
+            {selected && (
+              <>
                 <mesh
-                  key={`dot-${i}`}
-                  geometry={dotGeometry}
-                  material={dotMaterial}
-                  position={dotPos}
-                  quaternion={stickerQuat}
+                  geometry={xBarGeometry}
+                  material={xMaterial}
+                  position={xPos}
+                  quaternion={bar1Quat}
                 />
-              );
-            })}
+                <mesh
+                  geometry={xBarGeometry}
+                  material={xMaterial}
+                  position={xPos}
+                  quaternion={bar2Quat}
+                />
+              </>
+            )}
           </group>
         );
       })}
