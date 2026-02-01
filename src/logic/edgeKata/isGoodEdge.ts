@@ -44,23 +44,30 @@ export function isGoodEdge(liveEdge: LiveCubieState, orientation: OrientationCol
 
   const { UColor, DColor, FColor, BColor } = orientation;
 
+  // ZZ Edge Orientation: An edge is "good" if it can be placed correctly using only R, U, L, D moves.
+  // For U/D edges: the U/D sticker must NOT be on F or B face (can be on U, D, R, or L).
+  // This is because R, U, L, D moves cannot transfer stickers from the F/B faces to U/D faces.
   const isUD = c1 === UColor || c1 === DColor || c2 === UColor || c2 === DColor;
   if (isUD) {
     const udStickerIndex = (c1 === UColor || c1 === DColor) ? 1 : 2;
     const udColor = udStickerIndex === 1 ? c1 : c2;
     const udFace = udStickerIndex === 1 ? f1 : f2;
-    const good = udFace === 'U' || udFace === 'D';
+    // Good if U/D sticker is NOT on F or B face
+    const good = udFace !== 'F' && udFace !== 'B';
 
     return {
       isGood: good,
       kind: 'UD',
       explanation: good
-        ? `U/D edge: the ${udColor} sticker is on ${udFace}, so Good.`
-        : `U/D edge: the ${udColor} sticker is on ${udFace} (not U/D), so Bad.`,
+        ? `U/D edge: the ${udColor} sticker is on ${udFace} (not F/B), so Good.`
+        : `U/D edge: the ${udColor} sticker is on ${udFace} (F or B face), so Bad.`,
     };
   }
 
-  // Non-U/D edges: must contain F or B color
+  // Non-U/D edges (equatorial edges): must contain F or B color.
+  // For these edges: the F/B sticker must BE on F or B face.
+  // This is because R, U, L, D moves keep F/B face stickers in the F/B "orbit",
+  // so if the F/B colored sticker starts on F or B face, it can reach its home.
   const fbStickerIndex = (c1 === FColor || c1 === BColor) ? 1 : 2;
   const fbColor = fbStickerIndex === 1 ? c1 : c2;
   const fbFace = fbStickerIndex === 1 ? f1 : f2;
