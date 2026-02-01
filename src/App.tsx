@@ -3,6 +3,8 @@ import DrillPage from './pages/DrillPage';
 import StatsPage from './pages/StatsPage';
 import F2LNinjaPage from './pages/F2LPage';
 import F2LStatsPage from './pages/F2LStatsPage';
+import EdgeKataPage from './pages/EdgeKataPage';
+import EdgeKataStatsPage from './pages/EdgeKataStatsPage';
 import { useAppStorage } from './hooks/useLocalStorage';
 import Header from './components/Header';
 import { useEffect } from 'react';
@@ -15,6 +17,8 @@ function FooterNav() {
 
   const isF2L = path.startsWith('/f2l');
   const isF2LStats = path === '/f2l/stats';
+  const isEdgeKata = path.startsWith('/edge-kata');
+  const isEdgeKataStats = path === '/edge-kata/stats';
   const isColorStats = path === '/stats';
 
   if (isF2L) {
@@ -24,6 +28,18 @@ function FooterNav() {
           <Link to="/f2l" className="hover:text-sky-400">Back to F2L</Link>
         ) : (
           <Link to="/f2l/stats" className="hover:text-sky-400">View F2L Stats</Link>
+        )}
+      </footer>
+    );
+  }
+
+  if (isEdgeKata) {
+    return (
+      <footer className="p-4 text-center text-sm text-slate-400">
+        {isEdgeKataStats ? (
+          <Link to="/edge-kata" className="hover:text-sky-400">Back to Edge Kata</Link>
+        ) : (
+          <Link to="/edge-kata/stats" className="hover:text-sky-400">View Edge Kata Stats</Link>
         )}
       </footer>
     );
@@ -111,6 +127,8 @@ function App() {
               <Route path="/color-sensei" element={<DrillPage appData={appData} setAppData={setAppData} />} />
               <Route path="/f2l" element={<F2LNinjaPage appData={appData} />} />
               <Route path="/f2l/stats" element={<F2LStatsPage />} />
+              <Route path="/edge-kata" element={<EdgeKataPage appMuted={appData.settings.muted} />} />
+              <Route path="/edge-kata/stats" element={<EdgeKataStatsPage />} />
               <Route path="/stats" element={<StatsPage appData={appData} setAppData={setAppData} />} />
               <Route path="*" element={<Navigate to="/color-sensei" replace />} />
             </Routes>

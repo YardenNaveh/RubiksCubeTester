@@ -21,6 +21,9 @@ import {
   applyWCx2Move,
   applyWCzMove,
   applyWCzPrimeMove,
+  applyWCyMove,
+  applyWCyPrimeMove,
+  applyWCy2Move,
 } from './cubePiece';
 import { CubeColor, FACE_MAP } from '../cubeConstants';
 
@@ -145,6 +148,65 @@ export function createInitialCubeState(bottomColor: CubeColor = 'yellow'): Rubik
       currentOrientation: currentOrientation.clone(), // Same as effectiveDefinition.initialOrientation
     };
   });
+  return state;
+}
+
+type WholeCubeRotationFn = (pos: THREE.Vector3, ori: THREE.Quaternion) => { position: THREE.Vector3; orientation: THREE.Quaternion };
+
+function applyWholeCubeRotation(state: RubiksCubeState, rotationFn: WholeCubeRotationFn): RubiksCubeState {
+  const newState: RubiksCubeState = {};
+
+  for (const id in state) {
+    const old = state[id];
+    const rotatedCurrent = rotationFn(old.currentPosition, old.currentOrientation);
+    const rotatedInitial = rotationFn(old.definition.initialPosition, old.definition.initialOrientation);
+
+    const newDef: CubieDefinition = {
+      ...old.definition,
+      initialPosition: rotatedInitial.position.clone(),
+      initialOrientation: rotatedInitial.orientation.clone(),
+      stickers: old.definition.stickers.map(s => ({ ...s, normal: s.normal.clone() })),
+    };
+
+    newState[id] = {
+      definition: newDef,
+      currentPosition: rotatedCurrent.position.clone(),
+      currentOrientation: rotatedCurrent.orientation.clone(),
+    };
+  }
+
+  return newState;
+}
+
+/**
+ * Creates the initial solved state of the cube for a specific (Bottom, Front) orientation.
+ * Bottom is applied first (as in createInitialCubeState), then we rotate around Y to align Front.
+ */
+export function createInitialCubeStateWithFront(
+  bottomColor: CubeColor = 'yellow',
+  frontColor: CubeColor = 'red'
+): RubiksCubeState {
+  let state = createInitialCubeState(bottomColor);
+
+  // Find the center cubie whose sticker color matches frontColor
+  const frontCenter = Object.values(state).find(
+    p => p.definition.type === 'center' && p.definition.stickers.some(s => s.color === frontColor)
+  );
+  if (!frontCenter) return state;
+
+  const pos = frontCenter.currentPosition;
+  let rotation: WholeCubeRotationFn | null = null;
+
+  // Want front center at z=+1 (world F face). Only Y rotations are allowed here.
+  if (pos.z > 0.5) rotation = null;
+  else if (pos.z < -0.5) rotation = applyWCy2Move;
+  else if (pos.x > 0.5) rotation = applyWCyPrimeMove; // +X -> +Z
+  else if (pos.x < -0.5) rotation = applyWCyMove; // -X -> +Z
+
+  if (rotation) {
+    state = applyWholeCubeRotation(state, rotation);
+  }
+
   return state;
 }
 
