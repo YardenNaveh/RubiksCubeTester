@@ -1,25 +1,32 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Home } from 'lucide-react';
 import { CubeColor, COLORS, COLOR_PAIRS } from '../logic/cubeConstants';
-import EdgeKataCube from '../components/edgeKata/EdgeKataCube';
+import EdgeKataCube, { EdgeKataCubeHandle } from '../components/edgeKata/EdgeKataCube';
 import { EdgeKataRound, generateEdgeKataRound } from '../logic/edgeKata/generateEdgeKataRound';
 import { computeOrientationColors, isValidBottomFront } from '../logic/edgeKata/orientation';
 import useEdgeKataStore from '../state/edgeKataStore';
 import { isGoodEdge } from '../logic/edgeKata/isGoodEdge';
 import { useSound } from '../hooks/useSound';
+import { AppStorage, BottomColorSetting } from '../hooks/useLocalStorage';
 
 type ColorSetting = CubeColor | 'random';
 
-const colorOptions: ColorSetting[] = ['random', ...COLORS];
+const frontColorOptions: ColorSetting[] = ['random', ...COLORS];
 
-const EdgeKataPage: React.FC<{ appMuted: boolean }> = ({ appMuted }) => {
+interface EdgeKataPageProps {
+  appData: AppStorage;
+}
+
+const EdgeKataPage: React.FC<EdgeKataPageProps> = ({ appData }) => {
   const { recordAttempt } = useEdgeKataStore();
-  const playSuccessSound = useSound('ding', appMuted);
-  const playErrorSound = useSound('bzzt', appMuted);
+  const playSuccessSound = useSound('ding', appData.settings.muted);
+  const playErrorSound = useSound('bzzt', appData.settings.muted);
+  const cubeRef = useRef<EdgeKataCubeHandle>(null);
 
-  const [bottomSetting, setBottomSetting] = useState<ColorSetting>('yellow');
+  // Bottom color comes from global header setting
+  const bottomSetting: BottomColorSetting = appData.settings.bottomColor;
   const [frontSetting, setFrontSetting] = useState<ColorSetting>('red');
-  const [randomizeEachRound, setRandomizeEachRound] = useState(false);
-  const [scrambleMoves, setScrambleMoves] = useState(22);
+  const [autoContinue, setAutoContinue] = useState(false);
 
   const [round, setRound] = useState<EdgeKataRound | null>(null);
   const [answerState, setAnswerState] = useState<'idle' | 'correct' | 'incorrect'>('idle');
@@ -34,13 +41,13 @@ const EdgeKataPage: React.FC<{ appMuted: boolean }> = ({ appMuted }) => {
     const next = generateEdgeKataRound({
       bottom: bottomSetting,
       front: frontSetting,
-      randomizeEachRound,
-      scrambleMoves,
+      randomizeEachRound: false,
+      scrambleMoves: 22,
     });
     setRound(next);
     setAnswerState('idle');
     setFeedback('');
-  }, [bottomSetting, frontSetting, randomizeEachRound, scrambleMoves]);
+  }, [bottomSetting, frontSetting]);
 
   useEffect(() => {
     startRound();
@@ -59,7 +66,17 @@ const EdgeKataPage: React.FC<{ appMuted: boolean }> = ({ appMuted }) => {
     setAnswerState(isCorrect ? 'correct' : 'incorrect');
     setFeedback(res.explanation);
 
-    setTimeout(() => startRound(), 650);
+    if (autoContinue) {
+      setTimeout(() => startRound(), 650);
+    }
+  };
+
+  const handleContinue = () => {
+    startRound();
+  };
+
+  const handleOrientCube = () => {
+    cubeRef.current?.resetCamera();
   };
 
   const isInvalidCombo = useMemo(() => {
@@ -71,73 +88,39 @@ const EdgeKataPage: React.FC<{ appMuted: boolean }> = ({ appMuted }) => {
     <div className="flex flex-col items-center w-full gap-4">
       <h1 className="text-xl font-bold text-sky-400">Edge Kata</h1>
 
-      <div className="w-full bg-slate-800 rounded-md p-3 space-y-2">
-        <div className="text-sm text-slate-300 font-semibold">Orientation</div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-400">Bottom (D)</label>
-            <select
-              value={bottomSetting}
-              onChange={(e) => setBottomSetting(e.target.value as ColorSetting)}
-              className="bg-slate-700 text-slate-100 text-sm rounded p-2 border border-slate-600 capitalize"
-            >
-              {colorOptions.map(c => (
-                <option key={c} value={c} className="capitalize">{c}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-400">Front (F)</label>
-            <select
-              value={frontSetting}
-              onChange={(e) => setFrontSetting(e.target.value as ColorSetting)}
-              className="bg-slate-700 text-slate-100 text-sm rounded p-2 border border-slate-600 capitalize"
-            >
-              {colorOptions.map(c => (
-                <option key={c} value={c} className="capitalize">{c}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <label className="text-sm text-slate-300 flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={randomizeEachRound}
-              onChange={(e) => setRandomizeEachRound(e.target.checked)}
-            />
-            Randomize each round
-          </label>
-
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-400">Scramble</label>
-            <input
-              type="number"
-              min={0}
-              max={60}
-              value={scrambleMoves}
-              onChange={(e) => setScrambleMoves(Math.max(0, Math.min(60, Number(e.target.value))))}
-              className="w-20 bg-slate-700 text-slate-100 text-sm rounded p-1 border border-slate-600"
-            />
-          </div>
+      <div className="w-full bg-slate-800 rounded-md p-2 space-y-1">
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-slate-400">Front:</label>
+          <select
+            value={frontSetting}
+            onChange={(e) => setFrontSetting(e.target.value as ColorSetting)}
+            className="bg-slate-700 text-slate-100 text-xs rounded px-2 py-1 border border-slate-600 capitalize"
+          >
+            {frontColorOptions.map(c => (
+              <option key={c} value={c} className="capitalize">{c}</option>
+            ))}
+          </select>
+          <button
+            onClick={handleOrientCube}
+            className="p-1 text-slate-300 bg-slate-600 rounded hover:bg-slate-500"
+            title="Reset to home position"
+          >
+            <Home size={16} />
+          </button>
+          <span className="text-xs text-slate-500 ml-auto">
+            {round ? currentOrientationText : ''}
+          </span>
         </div>
 
         {isInvalidCombo && (
           <div className="text-xs text-red-300">
-            Invalid orientation: Front cannot equal Bottom or be opposite (e.g. {bottomSetting} vs {bottomSetting !== 'random' ? COLOR_PAIRS[bottomSetting] : ''}).
+            Invalid: Front ≠ Bottom or opposite ({bottomSetting} vs {bottomSetting !== 'random' ? COLOR_PAIRS[bottomSetting] : ''})
           </div>
         )}
-
-        <div className="text-xs text-slate-400">
-          {round ? currentOrientationText : 'Loading...'}
-        </div>
       </div>
 
       <div className="w-4/5 max-h-[300px] aspect-square bg-slate-950 rounded-lg overflow-hidden relative">
-        {round && <EdgeKataCube cubeState={round.state} highlightedEdgeId={round.highlightedEdgeId} />}
+        {round && <EdgeKataCube ref={cubeRef} cubeState={round.state} highlightedEdgeId={round.highlightedEdgeId} />}
       </div>
 
       <div className="w-full px-4 py-3 bg-slate-800 rounded-md">
@@ -145,29 +128,54 @@ const EdgeKataPage: React.FC<{ appMuted: boolean }> = ({ appMuted }) => {
         <div className="text-xs text-slate-400 mt-1">Answer based only on orientation category, not location.</div>
       </div>
 
-      <div className="flex gap-3 w-full">
-        <button
-          onClick={() => handleAnswer(true)}
-          disabled={!round || answerState !== 'idle'}
-          className="flex-1 px-4 py-3 text-slate-900 bg-sky-400 rounded-md hover:bg-sky-300 disabled:opacity-50"
-        >
-          Good
-        </button>
-        <button
-          onClick={() => handleAnswer(false)}
-          disabled={!round || answerState !== 'idle'}
-          className="flex-1 px-4 py-3 text-slate-100 bg-slate-700 rounded-md hover:bg-slate-600 disabled:opacity-50"
-        >
-          Bad
-        </button>
-      </div>
-
-      {answerState !== 'idle' && (
-        <div className={`w-full px-4 py-3 rounded-md ${answerState === 'correct' ? 'bg-emerald-900/40' : 'bg-red-900/40'}`}>
-          <div className="font-semibold">
-            {answerState === 'correct' ? 'Correct' : 'Incorrect'}
+      {answerState === 'idle' ? (
+        <div className="w-full space-y-3">
+          <div className="flex gap-3 w-full">
+            <button
+              onClick={() => handleAnswer(true)}
+              disabled={!round}
+              className="flex-1 px-4 py-3 text-slate-900 bg-sky-400 rounded-md hover:bg-sky-300 disabled:opacity-50"
+            >
+              Good
+            </button>
+            <button
+              onClick={() => handleAnswer(false)}
+              disabled={!round}
+              className="flex-1 px-4 py-3 text-slate-100 bg-slate-700 rounded-md hover:bg-slate-600 disabled:opacity-50"
+            >
+              Bad
+            </button>
           </div>
-          <div className="text-sm text-slate-200 mt-1">{feedback}</div>
+          
+          {/* Auto-continue toggle */}
+          <div className="flex items-center justify-between px-2">
+            <span className="text-xs text-slate-400">Skip explanation & auto-advance</span>
+            <button
+              onClick={() => setAutoContinue(!autoContinue)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${autoContinue ? 'bg-sky-500' : 'bg-slate-600'}`}
+            >
+              <span 
+                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${autoContinue ? 'translate-x-5' : ''}`}
+              />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="w-full space-y-3">
+          <div className={`w-full px-4 py-3 rounded-md ${answerState === 'correct' ? 'bg-emerald-900/40' : 'bg-red-900/40'}`}>
+            <div className="font-semibold">
+              {answerState === 'correct' ? 'Correct ✓' : 'Incorrect ✗'}
+            </div>
+            <div className="text-sm text-slate-200 mt-1">{feedback}</div>
+          </div>
+          {!autoContinue && (
+            <button
+              onClick={handleContinue}
+              className="w-full px-4 py-3 text-slate-900 bg-sky-400 rounded-md hover:bg-sky-300"
+            >
+              Continue
+            </button>
+          )}
         </div>
       )}
     </div>

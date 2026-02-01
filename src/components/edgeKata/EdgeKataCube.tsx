@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { RubiksCubeState } from '../../logic/f2l/cubeStateUtil';
@@ -9,12 +9,20 @@ interface EdgeKataCubeProps {
   highlightedEdgeId: string | null;
 }
 
-const EdgeKataCube: React.FC<EdgeKataCubeProps> = ({ cubeState, highlightedEdgeId }) => {
+export interface EdgeKataCubeHandle {
+  resetCamera: () => void;
+}
+
+const EdgeKataCube = forwardRef<EdgeKataCubeHandle, EdgeKataCubeProps>(({ cubeState, highlightedEdgeId }, ref) => {
   const controlsRef = useRef<any>();
 
   const resetCamera = () => {
     if (controlsRef.current) controlsRef.current.reset();
   };
+
+  useImperativeHandle(ref, () => ({
+    resetCamera,
+  }));
 
   // Reset camera on new scramble
   useEffect(() => {
@@ -39,7 +47,9 @@ const EdgeKataCube: React.FC<EdgeKataCubeProps> = ({ cubeState, highlightedEdgeI
       ))}
     </Canvas>
   );
-};
+});
+
+EdgeKataCube.displayName = 'EdgeKataCube';
 
 export default EdgeKataCube;
 

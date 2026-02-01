@@ -127,7 +127,7 @@ function App() {
               <Route path="/color-sensei" element={<DrillPage appData={appData} setAppData={setAppData} />} />
               <Route path="/f2l" element={<F2LNinjaPage appData={appData} />} />
               <Route path="/f2l/stats" element={<F2LStatsPage />} />
-              <Route path="/edge-kata" element={<EdgeKataPage appMuted={appData.settings.muted} />} />
+              <Route path="/edge-kata" element={<EdgeKataPage appData={appData} />} />
               <Route path="/edge-kata/stats" element={<EdgeKataStatsPage />} />
               <Route path="/stats" element={<StatsPage appData={appData} setAppData={setAppData} />} />
               <Route path="*" element={<Navigate to="/color-sensei" replace />} />
