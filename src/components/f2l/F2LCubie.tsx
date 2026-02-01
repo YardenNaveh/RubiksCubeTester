@@ -17,12 +17,14 @@ const BASE_PLASTIC_COLOR = '#222222';
 const SELECTED_PLASTIC_COLOR = '#111111'; // Black for highlight
 const SELECTED_BORDER_COLOR = '#555555'; // Dark gray border for highlighted stickers
 
-// 3x3 grid of dot positions on sticker
-const DOT_GRID_POSITIONS = [
-  [-0.25, -0.25], [0, -0.25], [0.25, -0.25],
-  [-0.25, 0],     [0, 0],     [0.25, 0],
-  [-0.25, 0.25],  [0, 0.25],  [0.25, 0.25],
-];
+// 5x5 grid of dot positions on sticker
+const DOT_GRID_POSITIONS: [number, number][] = [];
+const DOT_SPACING = 0.16;
+for (let row = -2; row <= 2; row++) {
+  for (let col = -2; col <= 2; col++) {
+    DOT_GRID_POSITIONS.push([col * DOT_SPACING, row * DOT_SPACING]);
+  }
+}
 
 const F2LCubie: React.FC<F2LCubieProps> = ({ liveState, onClick, selected, solved }) => {
   const groupRef = useRef<THREE.Group>(null);
@@ -40,7 +42,7 @@ const F2LCubie: React.FC<F2LCubieProps> = ({ liveState, onClick, selected, solve
   }), []);
   
   // Small circle geometry for dots
-  const dotGeometry = useMemo(() => new THREE.CircleGeometry(0.04, 8), []);
+  const dotGeometry = useMemo(() => new THREE.CircleGeometry(0.025, 6), []);
   const dotMaterial = useMemo(() => new THREE.MeshBasicMaterial({ 
     color: '#000000',
     side: THREE.DoubleSide,

@@ -37,15 +37,15 @@ function mergeWithDefaults(saved: Partial<F2LStats>): F2LStats {
 
 // Load initial state from localStorage (runs once, synchronously)
 function getInitialStats(): F2LStats {
-  try {
-    const savedStats = localStorage.getItem(STORAGE_KEY);
-    if (savedStats) {
+    try {
+      const savedStats = localStorage.getItem(STORAGE_KEY);
+      if (savedStats) {
       const parsed = JSON.parse(savedStats);
       return mergeWithDefaults(parsed);
+      }
+    } catch (error) {
+      console.error('Failed to load F2L stats:', error);
     }
-  } catch (error) {
-    console.error('Failed to load F2L stats:', error);
-  }
   return DEFAULT_F2L_STATS;
 }
 
