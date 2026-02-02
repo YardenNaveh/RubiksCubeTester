@@ -5,6 +5,8 @@ import F2LNinjaPage from './pages/F2LPage';
 import F2LStatsPage from './pages/F2LStatsPage';
 import EdgeKataPage from './pages/EdgeKataPage';
 import EdgeKataStatsPage from './pages/EdgeKataStatsPage';
+import ZanshinRecallPage from './pages/ZanshinRecallPage';
+import ZanshinRecallStatsPage from './pages/ZanshinRecallStatsPage';
 import { useAppStorage } from './hooks/useLocalStorage';
 import Header from './components/Header';
 import { useEffect } from 'react';
@@ -19,6 +21,8 @@ function FooterNav() {
   const isF2LStats = path === '/f2l/stats';
   const isEdgeKata = path.startsWith('/edge-kata');
   const isEdgeKataStats = path === '/edge-kata/stats';
+  const isZanshinRecall = path.startsWith('/zanshin-recall');
+  const isZanshinRecallStats = path === '/zanshin-recall/stats';
   const isColorStats = path === '/stats';
 
   if (isF2L) {
@@ -40,6 +44,18 @@ function FooterNav() {
           <Link to="/edge-kata" className="hover:text-sky-400">Back to Edge Kata</Link>
         ) : (
           <Link to="/edge-kata/stats" className="hover:text-sky-400">View Edge Kata Stats</Link>
+        )}
+      </footer>
+    );
+  }
+
+  if (isZanshinRecall) {
+    return (
+      <footer className="p-4 text-center text-sm text-slate-400">
+        {isZanshinRecallStats ? (
+          <Link to="/zanshin-recall" className="hover:text-sky-400">Back to Zanshin Recall</Link>
+        ) : (
+          <Link to="/zanshin-recall/stats" className="hover:text-sky-400">View Zanshin Recall Stats</Link>
         )}
       </footer>
     );
@@ -120,6 +136,8 @@ function App() {
               <Route path="/f2l/stats" element={<F2LStatsPage />} />
               <Route path="/edge-kata" element={<EdgeKataPage appData={appData} />} />
               <Route path="/edge-kata/stats" element={<EdgeKataStatsPage />} />
+              <Route path="/zanshin-recall" element={<ZanshinRecallPage appData={appData} />} />
+              <Route path="/zanshin-recall/stats" element={<ZanshinRecallStatsPage />} />
               <Route path="/stats" element={<StatsPage appData={appData} setAppData={setAppData} />} />
               <Route path="*" element={<Navigate to="/color-sensei" replace />} />
             </Routes>

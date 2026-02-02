@@ -19,6 +19,35 @@ function formatDeploymentDate(isoDate: string): string {
 }
 
 function getGameHelp(path: string): { title: string; content: React.ReactNode } {
+  if (path.startsWith('/zanshin-recall')) {
+    return {
+      title: 'Zanshin Recall',
+      content: (
+        <div className="space-y-3">
+          <p>Train your <strong>cube recall</strong> — memorize the cube and answer questions about it.</p>
+          
+          <h3 className="font-semibold text-sky-400">Question Types</h3>
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            <li><strong>Piece Recall:</strong> "Where is the red-green edge?" — click the correct piece</li>
+            <li><strong>Sticker Set Recall:</strong> "Click all yellow stickers" — select all matching stickers, then submit</li>
+            <li><strong>Single Sticker Recall:</strong> "What color was this sticker?" — one sticker is hidden, pick its color</li>
+          </ul>
+
+          <h3 className="font-semibold text-sky-400">How to Play</h3>
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            <li>The cube flashes for a set duration (configurable)</li>
+            <li>After the flash, answer the question from memory</li>
+            <li>Enable/disable question types in settings</li>
+          </ul>
+
+          <p className="text-sm text-slate-400">
+            Cube rotation is disabled — focus on memorizing from a fixed angle.
+          </p>
+        </div>
+      ),
+    };
+  }
+
   if (path.startsWith('/edge-kata')) {
     return {
       title: 'EO Kata - Edge Orientation',
