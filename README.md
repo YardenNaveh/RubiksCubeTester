@@ -1,6 +1,6 @@
 # 🧩 Rubik's Cube Trainer
 
-A web-based training app for speedcubers to sharpen their Rubik's Cube skills. Practice color recognition, edge orientation, and F2L (First Two Layers) pair spotting with interactive 3D visualization.
+A web-based training app for speedcubers to sharpen their Rubik's Cube skills. Practice color recognition, edge orientation, F2L (First Two Layers) pair spotting, and cube recall with interactive 3D visualization.
 
 **Live Demo:** [https://yardennaveh.github.io/RubiksCubeTester/](https://yardennaveh.github.io/RubiksCubeTester/)
 
@@ -25,11 +25,22 @@ Practice spotting F2L corner-edge pairs on a fully interactive 3D cube. The app 
 - Celebration animation on completion
 - Ensures no F2L pairs are pre-solved in the scramble
 
+### 🧠 Zanshin Recall
+Train your cube recall and memory with three distinct question types:
+- **Piece Recall**: "Where is the red-green edge?" — Click the correct piece from memory
+- **Sticker Set Recall**: "Click all yellow stickers" — Select all matching stickers
+- **Single Sticker Color Recall**: "What color was this sticker?" — One sticker is hidden, recall its color
+- Configurable flash duration (0.7s – 10s)
+- Enable/disable specific question types
+- Option to only choose from visible stickers
+- Per-question-type statistics and session tracking
+
 ### 📊 Statistics
 Track your progress over time with detailed stats for each game:
 - **Color Sensei**: Reaction times, accuracy, current/best streaks
 - **EO Kata**: Attempts, accuracy, U/D vs non-U/D edge breakdown, streaks
 - **F2L Pair Ninja**: Solve times, averages, best times, miss counts, streaks
+- **Zanshin Recall**: Attempts, accuracy, response times, streaks per question type
 - Charts showing recent performance history
 
 ### ⚙️ Settings
@@ -106,10 +117,15 @@ src/
 ├── components/           # Reusable UI components
 │   ├── edgeKata/        # EO Kata components (3D cube with highlighting)
 │   ├── f2l/             # F2L-specific components (3D cube, cubies)
+│   ├── zanshinRecall/   # Zanshin Recall components (memory game cube)
+│   │   ├── ColorSelector.tsx
+│   │   ├── ZanshinCubie.tsx
+│   │   └── ZanshinRecallCube.tsx
 │   ├── AnswerPad.tsx
 │   ├── Cube.tsx
 │   ├── HamburgerMenu.tsx
-│   └── Header.tsx
+│   ├── Header.tsx
+│   └── HelpModal.tsx
 ├── hooks/               # Custom React hooks
 │   ├── useLocalStorage.ts
 │   └── useSound.ts
@@ -123,18 +139,23 @@ src/
 │   │   ├── cubeStateUtil.ts
 │   │   ├── pairDetector.ts
 │   │   └── scramble.ts
+│   ├── zanshinRecall/   # Zanshin Recall round generation
+│   │   └── generateZanshinRound.ts
 │   ├── cubeConstants.ts
 │   └── orientation.ts
 ├── pages/               # Route pages
-│   ├── DrillPage.tsx         # Color Sensei
-│   ├── EdgeKataPage.tsx      # EO Kata
+│   ├── DrillPage.tsx              # Color Sensei
+│   ├── EdgeKataPage.tsx           # EO Kata
 │   ├── EdgeKataStatsPage.tsx
-│   ├── F2LPage.tsx           # F2L Pair Ninja
+│   ├── F2LPage.tsx                # F2L Pair Ninja
 │   ├── F2LStatsPage.tsx
-│   └── StatsPage.tsx         # Color Sensei Stats
+│   ├── ZanshinRecallPage.tsx      # Zanshin Recall
+│   ├── ZanshinRecallStatsPage.tsx
+│   └── StatsPage.tsx              # Color Sensei Stats
 ├── state/               # State management
 │   ├── edgeKataStore.ts
-│   └── f2lStore.ts
+│   ├── f2lStore.ts
+│   └── zanshinRecallStore.ts
 └── App.tsx              # Main app with routing
 ```
 
