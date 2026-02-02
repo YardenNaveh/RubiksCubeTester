@@ -198,10 +198,12 @@ export function createInitialCubeStateWithFront(
   let rotation: WholeCubeRotationFn | null = null;
 
   // Want front center at z=+1 (world F face). Only Y rotations are allowed here.
+  // y move (-π/2 around Y): +X -> +Z
+  // y' move (+π/2 around Y): -X -> +Z
   if (pos.z > 0.5) rotation = null;
   else if (pos.z < -0.5) rotation = applyWCy2Move;
-  else if (pos.x > 0.5) rotation = applyWCyPrimeMove; // +X -> +Z
-  else if (pos.x < -0.5) rotation = applyWCyMove; // -X -> +Z
+  else if (pos.x > 0.5) rotation = applyWCyMove; // +X -> +Z (y move)
+  else if (pos.x < -0.5) rotation = applyWCyPrimeMove; // -X -> +Z (y' move)
 
   if (rotation) {
     state = applyWholeCubeRotation(state, rotation);
