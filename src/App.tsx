@@ -136,7 +136,7 @@ function App() {
               <Route path="/f2l/stats" element={<F2LStatsPage />} />
               <Route path="/edge-kata" element={<EdgeKataPage appData={appData} setAppData={setAppData} />} />
               <Route path="/edge-kata/stats" element={<EdgeKataStatsPage />} />
-              <Route path="/zanshin-recall" element={<ZanshinRecallPage appData={appData} />} />
+              <Route path="/zanshin-recall" element={<ZanshinRecallPage appData={appData} setAppData={setAppData} />} />
               <Route path="/zanshin-recall/stats" element={<ZanshinRecallStatsPage />} />
               <Route path="/stats" element={<StatsPage appData={appData} setAppData={setAppData} />} />
               <Route path="*" element={<Navigate to="/color-sensei" replace />} />

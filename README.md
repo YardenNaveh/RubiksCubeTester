@@ -43,10 +43,12 @@ Track your progress over time with detailed stats for each game:
 - **Zanshin Recall**: Attempts, accuracy, response times, streaks per question type
 - Charts showing recent performance history
 
-### ⚙️ Settings
-- **Sound toggle**: Enable/disable audio feedback (ding for correct, buzz for incorrect)
+### ⚙️ Settings & Persistence
+All user preferences persist between sessions:
 - **Bottom color preference**: Choose a fixed bottom color or random for varied practice
-- **Front color selection**: Available in EO Kata for full orientation control
+- **EO Kata settings**: Front color selection, auto-continue toggle
+- **Zanshin Recall settings**: Flash duration, enabled question types, visible stickers option
+- **Audio feedback**: Ding for correct answers, buzz for incorrect
 
 ## Tech Stack
 
@@ -113,6 +115,8 @@ npm run deploy
 ## Project Structure
 
 ```
+.context/
+└── INSTRUCTIONS.md       # AI assistant context & instructions
 src/
 ├── components/           # Reusable UI components
 │   ├── edgeKata/        # EO Kata components (3D cube with highlighting)
@@ -126,8 +130,10 @@ src/
 │   ├── HamburgerMenu.tsx
 │   ├── Header.tsx
 │   └── HelpModal.tsx
+├── config/              # App configuration
+│   └── deploymentInfo.ts
 ├── hooks/               # Custom React hooks
-│   ├── useLocalStorage.ts
+│   ├── useLocalStorage.ts   # Settings persistence
 │   └── useSound.ts
 ├── logic/               # Core game logic
 │   ├── edgeKata/        # Edge orientation detection & round generation

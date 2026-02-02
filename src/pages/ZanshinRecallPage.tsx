@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Settings, Play, RotateCcw } from 'lucide-react';
-import { AppStorage } from '../hooks/useLocalStorage';
+import { AppStorage, ZanshinQuestionType } from '../hooks/useLocalStorage';
 import { useSound } from '../hooks/useSound';
-import useZanshinRecallStore, { QuestionType } from '../state/zanshinRecallStore';
+import useZanshinRecallStore from '../state/zanshinRecallStore';
 import ZanshinRecallCube from '../components/zanshinRecall/ZanshinRecallCube';
 import ColorSelector from '../components/zanshinRecall/ColorSelector';
 import {
@@ -18,29 +18,42 @@ import { DisplayMode } from '../components/zanshinRecall/ZanshinCubie';
 
 interface ZanshinRecallPageProps {
   appData: AppStorage;
+  setAppData: (value: AppStorage | ((val: AppStorage) => AppStorage)) => void;
 }
 
 type GamePhase = 'ready' | 'flash' | 'recall' | 'feedback';
 
-interface GameSettings {
-  flashDurationMs: number;
-  enabledTypes: QuestionType[];
-  onlyVisibleStickers: boolean;
-}
-
-const DEFAULT_SETTINGS: GameSettings = {
-  flashDurationMs: 2000,
-  enabledTypes: ['pieceRecall', 'stickerSetRecall', 'singleStickerRecall'],
-  onlyVisibleStickers: true,
-};
-
-const ZanshinRecallPage: React.FC<ZanshinRecallPageProps> = ({ appData }) => {
+const ZanshinRecallPage: React.FC<ZanshinRecallPageProps> = ({ appData, setAppData }) => {
   const { recordAttempt, sessionStats } = useZanshinRecallStore();
   const playSuccessSound = useSound('ding', appData.settings.muted);
   const playErrorSound = useSound('bzzt', appData.settings.muted);
 
-  // Settings state
-  const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
+  // Settings from persisted app storage
+  const flashDurationMs = appData.settings.zanshinFlashDurationMs;
+  const enabledTypes = appData.settings.zanshinEnabledTypes;
+  const onlyVisibleStickers = appData.settings.zanshinOnlyVisibleStickers;
+
+  const setFlashDurationMs = (value: number) => {
+    setAppData(prev => ({
+      ...prev,
+      settings: { ...prev.settings, zanshinFlashDurationMs: value },
+    }));
+  };
+
+  const setEnabledTypes = (value: ZanshinQuestionType[]) => {
+    setAppData(prev => ({
+      ...prev,
+      settings: { ...prev.settings, zanshinEnabledTypes: value },
+    }));
+  };
+
+  const setOnlyVisibleStickers = (value: boolean) => {
+    setAppData(prev => ({
+      ...prev,
+      settings: { ...prev.settings, zanshinOnlyVisibleStickers: value },
+    }));
+  };
+
   const [showSettings, setShowSettings] = useState(false);
 
   // Game state
@@ -71,7 +84,7 @@ const ZanshinRecallPage: React.FC<ZanshinRecallPageProps> = ({ appData }) => {
 
   // Start a new round
   const startRound = useCallback(() => {
-    if (settings.enabledTypes.length === 0) {
+    if (enabledTypes.length === 0) {
       alert('Please enable at least one question type in settings.');
       return;
     }
@@ -86,9 +99,9 @@ const ZanshinRecallPage: React.FC<ZanshinRecallPageProps> = ({ appData }) => {
 
     // Generate new round
     const newRound = generateZanshinRound({
-      enabledTypes: settings.enabledTypes,
-      flashDurationMs: settings.flashDurationMs,
-      onlyVisibleStickers: settings.onlyVisibleStickers,
+      enabledTypes: enabledTypes,
+      flashDurationMs: flashDurationMs,
+      onlyVisibleStickers: onlyVisibleStickers,
       bottomColor: appData.settings.bottomColor,
     });
     
@@ -99,8 +112,8 @@ const ZanshinRecallPage: React.FC<ZanshinRecallPageProps> = ({ appData }) => {
     flashTimerRef.current = setTimeout(() => {
       setPhase('recall');
       setRoundStartTime(Date.now());
-    }, settings.flashDurationMs);
-  }, [settings, appData.settings.bottomColor]);
+    }, flashDurationMs);
+  }, [enabledTypes, flashDurationMs, onlyVisibleStickers, appData.settings.bottomColor]);
 
   // Handle sticker click (for sticker set recall)
   const handleStickerClick = useCallback((stickerId: StickerId) => {
@@ -263,23 +276,15 @@ const ZanshinRecallPage: React.FC<ZanshinRecallPageProps> = ({ appData }) => {
   };
 
   // Toggle a question type
-  const toggleQuestionType = (type: QuestionType) => {
-    setSettings(prev => {
-      const enabled = prev.enabledTypes.includes(type);
-      if (enabled) {
-        // Don't allow disabling if it's the last one
-        if (prev.enabledTypes.length === 1) return prev;
-        return {
-          ...prev,
-          enabledTypes: prev.enabledTypes.filter(t => t !== type),
-        };
-      } else {
-        return {
-          ...prev,
-          enabledTypes: [...prev.enabledTypes, type],
-        };
-      }
-    });
+  const toggleQuestionType = (type: ZanshinQuestionType) => {
+    const enabled = enabledTypes.includes(type);
+    if (enabled) {
+      // Don't allow disabling if it's the last one
+      if (enabledTypes.length === 1) return;
+      setEnabledTypes(enabledTypes.filter(t => t !== type));
+    } else {
+      setEnabledTypes([...enabledTypes, type]);
+    }
   };
 
   return (
@@ -302,14 +307,14 @@ const ZanshinRecallPage: React.FC<ZanshinRecallPageProps> = ({ appData }) => {
           
           {/* Flash Duration */}
           <div className="flex items-center justify-between">
-            <label className="text-xs text-slate-400">Flash Duration: {(settings.flashDurationMs / 1000).toFixed(1)}s</label>
+            <label className="text-xs text-slate-400">Flash Duration: {(flashDurationMs / 1000).toFixed(1)}s</label>
             <input
               type="range"
               min="700"
               max="10000"
               step="100"
-              value={settings.flashDurationMs}
-              onChange={(e) => setSettings(prev => ({ ...prev, flashDurationMs: Number(e.target.value) }))}
+              value={flashDurationMs}
+              onChange={(e) => setFlashDurationMs(Number(e.target.value))}
               className="w-32 h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
             />
           </div>
@@ -321,7 +326,7 @@ const ZanshinRecallPage: React.FC<ZanshinRecallPageProps> = ({ appData }) => {
               <label className="flex items-center gap-2 text-sm text-slate-300">
                 <input
                   type="checkbox"
-                  checked={settings.enabledTypes.includes('pieceRecall')}
+                  checked={enabledTypes.includes('pieceRecall')}
                   onChange={() => toggleQuestionType('pieceRecall')}
                   className="rounded text-sky-500 focus:ring-sky-500"
                 />
@@ -330,7 +335,7 @@ const ZanshinRecallPage: React.FC<ZanshinRecallPageProps> = ({ appData }) => {
               <label className="flex items-center gap-2 text-sm text-slate-300">
                 <input
                   type="checkbox"
-                  checked={settings.enabledTypes.includes('stickerSetRecall')}
+                  checked={enabledTypes.includes('stickerSetRecall')}
                   onChange={() => toggleQuestionType('stickerSetRecall')}
                   className="rounded text-sky-500 focus:ring-sky-500"
                 />
@@ -339,7 +344,7 @@ const ZanshinRecallPage: React.FC<ZanshinRecallPageProps> = ({ appData }) => {
               <label className="flex items-center gap-2 text-sm text-slate-300">
                 <input
                   type="checkbox"
-                  checked={settings.enabledTypes.includes('singleStickerRecall')}
+                  checked={enabledTypes.includes('singleStickerRecall')}
                   onChange={() => toggleQuestionType('singleStickerRecall')}
                   className="rounded text-sky-500 focus:ring-sky-500"
                 />
@@ -352,8 +357,8 @@ const ZanshinRecallPage: React.FC<ZanshinRecallPageProps> = ({ appData }) => {
           <label className="flex items-center gap-2 text-sm text-slate-300">
             <input
               type="checkbox"
-              checked={settings.onlyVisibleStickers}
-              onChange={(e) => setSettings(prev => ({ ...prev, onlyVisibleStickers: e.target.checked }))}
+              checked={onlyVisibleStickers}
+              onChange={(e) => setOnlyVisibleStickers(e.target.checked)}
               className="rounded text-sky-500 focus:ring-sky-500"
             />
             Only choose from visible stickers

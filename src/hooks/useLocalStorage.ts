@@ -6,12 +6,19 @@ import { CubeColor } from '../logic/cubeConstants';
 // Export bottom color setting type for components
 export type BottomColorSetting = CubeColor | 'random';
 
+// Question types for Zanshin Recall
+export type ZanshinQuestionType = 'pieceRecall' | 'stickerSetRecall' | 'singleStickerRecall';
+
 export interface Settings {
   muted: boolean;
   bottomColor: BottomColorSetting; // Now actively used and supports 'random'
   // Edge Kata preferences
   edgeKataFrontColor: BottomColorSetting; // 'random' or specific color
   edgeKataAutoContinue: boolean;
+  // Zanshin Recall preferences
+  zanshinFlashDurationMs: number;
+  zanshinEnabledTypes: ZanshinQuestionType[];
+  zanshinOnlyVisibleStickers: boolean;
 }
 export interface DrillStats {
   total: number;
@@ -33,6 +40,9 @@ const DEFAULT_SETTINGS: Settings = {
   bottomColor: 'white', // Explicit default
   edgeKataFrontColor: 'random',
   edgeKataAutoContinue: false,
+  zanshinFlashDurationMs: 2000,
+  zanshinEnabledTypes: ['pieceRecall', 'stickerSetRecall', 'singleStickerRecall'],
+  zanshinOnlyVisibleStickers: true,
 };
 
 const DEFAULT_STATS: DrillStats = {
