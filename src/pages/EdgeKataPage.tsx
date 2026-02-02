@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Home } from 'lucide-react';
-import { CubeColor, COLORS, COLOR_PAIRS } from '../logic/cubeConstants';
+import { ADJACENT_FACES, CubeColor, COLOR_PAIRS } from '../logic/cubeConstants';
 import EdgeKataCube, { EdgeKataCubeHandle } from '../components/edgeKata/EdgeKataCube';
 import { EdgeKataRound, generateEdgeKataRound } from '../logic/edgeKata/generateEdgeKataRound';
 import { computeOrientationColors, isValidBottomFront } from '../logic/edgeKata/orientation';
@@ -10,8 +10,6 @@ import { useSound } from '../hooks/useSound';
 import { AppStorage, BottomColorSetting } from '../hooks/useLocalStorage';
 
 type ColorSetting = CubeColor | 'random';
-
-const frontColorOptions: ColorSetting[] = ['random', ...COLORS];
 
 interface EdgeKataPageProps {
   appData: AppStorage;
@@ -25,12 +23,37 @@ const EdgeKataPage: React.FC<EdgeKataPageProps> = ({ appData }) => {
 
   // Bottom color comes from global header setting
   const bottomSetting: BottomColorSetting = appData.settings.bottomColor;
-  const [frontSetting, setFrontSetting] = useState<ColorSetting>('red');
+  const [frontSetting, setFrontSetting] = useState<ColorSetting>('random');
   const [autoContinue, setAutoContinue] = useState(false);
 
   const [round, setRound] = useState<EdgeKataRound | null>(null);
   const [answerState, setAnswerState] = useState<'idle' | 'correct' | 'incorrect'>('idle');
   const [feedback, setFeedback] = useState<string>('');
+
+  // Compute valid front color options based on bottom selection
+  const frontColorOptions: ColorSetting[] = useMemo(() => {
+    if (bottomSetting === 'random') {
+      // If bottom is random, front must also be random
+      return ['random'];
+    }
+    // Return 'random' plus the adjacent colors for this bottom
+    return ['random', ...ADJACENT_FACES[bottomSetting]];
+  }, [bottomSetting]);
+
+  // When bottom changes, ensure front is still valid
+  useEffect(() => {
+    if (bottomSetting === 'random') {
+      // Force front to random when bottom is random
+      setFrontSetting('random');
+    } else if (frontSetting !== 'random') {
+      // Check if current front is still valid for the new bottom
+      const validFronts = ADJACENT_FACES[bottomSetting];
+      if (!validFronts.includes(frontSetting as CubeColor)) {
+        // Current selection is no longer valid, reset to random
+        setFrontSetting('random');
+      }
+    }
+  }, [bottomSetting, frontSetting]);
 
   const currentOrientationText = useMemo(() => {
     if (!round) return '';
@@ -94,7 +117,10 @@ const EdgeKataPage: React.FC<EdgeKataPageProps> = ({ appData }) => {
           <select
             value={frontSetting}
             onChange={(e) => setFrontSetting(e.target.value as ColorSetting)}
-            className="bg-slate-700 text-slate-100 text-xs rounded px-2 py-1 border border-slate-600 capitalize"
+            disabled={bottomSetting === 'random'}
+            className={`bg-slate-700 text-slate-100 text-xs rounded px-2 py-1 border border-slate-600 capitalize ${
+              bottomSetting === 'random' ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
             {frontColorOptions.map(c => (
               <option key={c} value={c} className="capitalize">{c}</option>

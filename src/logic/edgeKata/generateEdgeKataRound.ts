@@ -1,7 +1,16 @@
 import { AllMoves, applyCubeMove, createInitialCubeStateWithFront, LiveCubieState, RubiksCubeState } from '../f2l/cubeStateUtil';
-import { CubeColor } from '../cubeConstants';
+import { ADJACENT_FACES, CubeColor } from '../cubeConstants';
 import { computeOrientationColors, isValidBottomFront, randomValidBottomFront } from './orientation';
 import { isGoodEdge } from './isGoodEdge';
+
+/**
+ * Given a fixed bottom color, returns a random valid front color.
+ * Valid front colors are those adjacent to the bottom (not the same or opposite).
+ */
+function randomValidFrontForBottom(bottom: CubeColor): CubeColor {
+  const validFronts = ADJACENT_FACES[bottom];
+  return validFronts[Math.floor(Math.random() * validFronts.length)];
+}
 
 const ALL_MOVES: AllMoves[] = [
   'U', "U'", 'U2',
@@ -63,14 +72,26 @@ export function generateEdgeKataRound(settings: EdgeKataRoundSettings): EdgeKata
   let bottom: CubeColor;
   let front: CubeColor;
 
-  if (settings.randomizeEachRound || settings.bottom === 'random' || settings.front === 'random') {
+  if (settings.randomizeEachRound || (settings.bottom === 'random' && settings.front === 'random')) {
+    // Both random or forced randomization: pick any valid combination
     const rnd = randomValidBottomFront();
     bottom = rnd.bottom;
     front = rnd.front;
+  } else if (settings.bottom === 'random') {
+    // Bottom is random, front should also be random (UI enforces this)
+    const rnd = randomValidBottomFront();
+    bottom = rnd.bottom;
+    front = rnd.front;
+  } else if (settings.front === 'random') {
+    // Bottom is fixed, only front is random - pick a valid front for this bottom
+    bottom = settings.bottom;
+    front = randomValidFrontForBottom(bottom);
   } else {
+    // Both are specific colors
     bottom = settings.bottom;
     front = settings.front;
     if (!isValidBottomFront(bottom, front)) {
+      // Invalid combination - fall back to random
       const rnd = randomValidBottomFront();
       bottom = rnd.bottom;
       front = rnd.front;
