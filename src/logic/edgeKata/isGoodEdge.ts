@@ -44,41 +44,45 @@ export function isGoodEdge(liveEdge: LiveCubieState, orientation: OrientationCol
 
   const { UColor, DColor, FColor, BColor } = orientation;
 
-  // ZZ Edge Orientation: An edge is "good" if it can be placed correctly using only R, U, L, D moves.
-  // For U/D edges: the U/D sticker must NOT be on F or B face (can be on U, D, R, or L).
-  // This is because R, U, L, D moves cannot transfer stickers from the F/B faces to U/D faces.
-  const isUD = c1 === UColor || c1 === DColor || c2 === UColor || c2 === DColor;
-  if (isUD) {
-    const udStickerIndex = (c1 === UColor || c1 === DColor) ? 1 : 2;
-    const udColor = udStickerIndex === 1 ? c1 : c2;
-    const udFace = udStickerIndex === 1 ? f1 : f2;
-    // Good if U/D sticker is NOT on F or B face
-    const good = udFace !== 'F' && udFace !== 'B';
+  // Determine edge's solved layer based on its colors:
+  // - If edge has U or D color → belongs to U or D layer (top/bottom)
+  // - If edge has NO U/D colors → belongs to middle layer
+  const belongsToUDLayer = c1 === UColor || c1 === DColor || c2 === UColor || c2 === DColor;
+
+  if (belongsToUDLayer) {
+    // U/D layer edge: the "important sticker" is the one with U or D color
+    const importantStickerIndex = (c1 === UColor || c1 === DColor) ? 1 : 2;
+    const importantColor = importantStickerIndex === 1 ? c1 : c2;
+    const importantFace = importantStickerIndex === 1 ? f1 : f2;
+    
+    // GOOD if important sticker is facing U or D
+    // BAD if important sticker is facing any side face (F, B, L, R)
+    const good = importantFace === 'U' || importantFace === 'D';
 
     return {
       isGood: good,
       kind: 'UD',
       explanation: good
-        ? `U/D edge: the ${udColor} sticker is on ${udFace} (not F/B), so Good.`
-        : `U/D edge: the ${udColor} sticker is on ${udFace} (F or B face), so Bad.`,
+        ? `U/D edge: the ${importantColor} sticker is facing ${importantFace}, so Good.`
+        : `U/D edge: the ${importantColor} sticker is facing ${importantFace} (not U/D), so Bad.`,
     };
   }
 
-  // Non-U/D edges (equatorial edges): must contain F or B color.
-  // For these edges: the F/B sticker must BE on F or B face.
-  // This is because R, U, L, D moves keep F/B face stickers in the F/B "orbit",
-  // so if the F/B colored sticker starts on F or B face, it can reach its home.
-  const fbStickerIndex = (c1 === FColor || c1 === BColor) ? 1 : 2;
-  const fbColor = fbStickerIndex === 1 ? c1 : c2;
-  const fbFace = fbStickerIndex === 1 ? f1 : f2;
-  const good = fbFace === 'F' || fbFace === 'B';
+  // Middle layer edge: the "important sticker" is the one with F or B color
+  const importantStickerIndex = (c1 === FColor || c1 === BColor) ? 1 : 2;
+  const importantColor = importantStickerIndex === 1 ? c1 : c2;
+  const importantFace = importantStickerIndex === 1 ? f1 : f2;
+  
+  // GOOD if important sticker is facing F or B
+  // BAD if important sticker is facing any other face (U, D, L, R)
+  const good = importantFace === 'F' || importantFace === 'B';
 
   return {
     isGood: good,
     kind: 'FB',
     explanation: good
-      ? `Non-U/D edge: the F/B color (${fbColor}) sticker is on ${fbFace}, so Good.`
-      : `Non-U/D edge: the F/B color (${fbColor}) sticker is on ${fbFace} (not F/B), so Bad.`,
+      ? `Middle edge: the ${importantColor} sticker is facing ${importantFace}, so Good.`
+      : `Middle edge: the ${importantColor} sticker is facing ${importantFace} (not F/B), so Bad.`,
   };
 }
 

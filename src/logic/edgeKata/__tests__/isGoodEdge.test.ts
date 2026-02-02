@@ -1,24 +1,21 @@
-import { applyCubeMove, createInitialCubeState, LiveCubieState } from '../../f2l/cubeStateUtil';
+import { applyCubeMove, createInitialCubeState } from '../../f2l/cubeStateUtil';
 import { computeOrientationColors } from '../orientation';
 import { isGoodEdge } from '../isGoodEdge';
 
-function findEdgeWithColor(state: Record<string, LiveCubieState>, color: string): LiveCubieState {
-  const edges = Object.values(state).filter(p => p.definition.type === 'edge');
-  const found = edges.find(e => e.definition.stickers.some(s => s.color === color));
-  if (!found) throw new Error(`No edge found with color ${color}`);
-  return found;
-}
-
 describe('Edge Kata isGoodEdge - ZZ Edge Orientation', () => {
-  // ZZ Edge Orientation Rule:
-  // An edge is "good" (correctly oriented) if it can be placed using only R, U, L, D moves.
-  // This is determined by a parity that is INVARIANT under RUDL moves:
-  // - For U/D edges: U/D sticker must NOT be on F or B face (can be on U, D, R, or L)
-  // - For non-U/D edges: F/B sticker must BE on F or B face
+  // Edge Orientation based on "Important Sticker" model:
   //
-  // Key insight: RUDL moves cannot transfer stickers between {U,D,R,L} and {F,B} face groups.
-  // If a U/D sticker is on F or B, it can only cycle between F and B using RUDL.
-  // If a U/D sticker is on U, D, R, or L, it stays in that group using RUDL.
+  // 1. Determine edge's solved layer by its colors:
+  //    - Has U or D color → belongs to U/D layer
+  //    - No U/D colors → belongs to middle layer
+  //
+  // 2. Find the "important sticker":
+  //    - U/D layer edges: sticker with U or D color
+  //    - Middle layer edges: sticker with F or B color
+  //
+  // 3. Classification:
+  //    - U/D edges: GOOD if important sticker faces U or D; BAD otherwise
+  //    - Middle edges: GOOD if important sticker faces F or B; BAD otherwise
 
   describe('U/D edges (edges with white/yellow sticker)', () => {
     test('U/D sticker on U face is GOOD', () => {
@@ -45,7 +42,7 @@ describe('Edge Kata isGoodEdge - ZZ Edge Orientation', () => {
       expect(isGoodEdge(df, o).kind).toBe('UD');
     });
 
-    test('U/D sticker on R face is GOOD (not F/B)', () => {
+    test('U/D sticker on R face is BAD (not U/D)', () => {
       const bottom = 'yellow' as const;
       const front = 'red' as const;
       const o = computeOrientationColors(bottom, front);
@@ -58,11 +55,11 @@ describe('Edge Kata isGoodEdge - ZZ Edge Orientation', () => {
       state = applyCubeMove(state, 'F');
       const uf = state['UF']; // This piece is now at RF with U on R face
       const result = isGoodEdge(uf, o);
-      expect(result.isGood).toBe(true);
+      expect(result.isGood).toBe(false);
       expect(result.kind).toBe('UD');
     });
 
-    test('U/D sticker on L face is GOOD (not F/B)', () => {
+    test('U/D sticker on L face is BAD (not U/D)', () => {
       const bottom = 'yellow' as const;
       const front = 'red' as const;
       const o = computeOrientationColors(bottom, front);
@@ -73,7 +70,7 @@ describe('Edge Kata isGoodEdge - ZZ Edge Orientation', () => {
       state = applyCubeMove(state, "F'");
       const uf = state['UF']; // This piece is now at LF with U on L face
       const result = isGoodEdge(uf, o);
-      expect(result.isGood).toBe(true);
+      expect(result.isGood).toBe(false);
       expect(result.kind).toBe('UD');
     });
 
@@ -91,7 +88,7 @@ describe('Edge Kata isGoodEdge - ZZ Edge Orientation', () => {
       const result = isGoodEdge(ur, o);
       expect(result.isGood).toBe(false);
       expect(result.kind).toBe('UD');
-      expect(result.explanation).toContain('F or B face');
+      expect(result.explanation).toContain('not U/D');
     });
 
     test('U/D sticker on B face is BAD', () => {
@@ -107,7 +104,7 @@ describe('Edge Kata isGoodEdge - ZZ Edge Orientation', () => {
       const result = isGoodEdge(ur, o);
       expect(result.isGood).toBe(false);
       expect(result.kind).toBe('UD');
-      expect(result.explanation).toContain('F or B face');
+      expect(result.explanation).toContain('not U/D');
     });
   });
 
