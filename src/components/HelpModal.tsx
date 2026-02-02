@@ -24,7 +24,7 @@ function getGameHelp(path: string): { title: string; content: React.ReactNode } 
       title: 'EO Kata - Edge Orientation',
       content: (
         <div className="space-y-3">
-          <p>Practice recognizing <strong>good</strong> vs <strong>bad</strong> edges for ZZ method.</p>
+          <p>Practice recognizing <strong>good</strong> vs <strong>bad</strong> edges — edges that can be solved using only <strong>R, L, U, and D</strong> moves.</p>
           
           <h3 className="font-semibold text-sky-400">Finding the Important Sticker</h3>
           <ul className="list-disc list-inside space-y-1 text-sm">
