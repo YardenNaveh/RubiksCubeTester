@@ -9,6 +9,9 @@ export type BottomColorSetting = CubeColor | 'random';
 export interface Settings {
   muted: boolean;
   bottomColor: BottomColorSetting; // Now actively used and supports 'random'
+  // Edge Kata preferences
+  edgeKataFrontColor: BottomColorSetting; // 'random' or specific color
+  edgeKataAutoContinue: boolean;
 }
 export interface DrillStats {
   total: number;
@@ -28,6 +31,8 @@ const STORAGE_KEY = 'rubiks-trainer-v1';
 const DEFAULT_SETTINGS: Settings = {
   muted: false,
   bottomColor: 'white', // Explicit default
+  edgeKataFrontColor: 'random',
+  edgeKataAutoContinue: false,
 };
 
 const DEFAULT_STATS: DrillStats = {

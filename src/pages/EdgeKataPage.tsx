@@ -13,9 +13,10 @@ type ColorSetting = CubeColor | 'random';
 
 interface EdgeKataPageProps {
   appData: AppStorage;
+  setAppData: (value: AppStorage | ((val: AppStorage) => AppStorage)) => void;
 }
 
-const EdgeKataPage: React.FC<EdgeKataPageProps> = ({ appData }) => {
+const EdgeKataPage: React.FC<EdgeKataPageProps> = ({ appData, setAppData }) => {
   const { recordAttempt } = useEdgeKataStore();
   const playSuccessSound = useSound('ding', appData.settings.muted);
   const playErrorSound = useSound('bzzt', appData.settings.muted);
@@ -23,8 +24,24 @@ const EdgeKataPage: React.FC<EdgeKataPageProps> = ({ appData }) => {
 
   // Bottom color comes from global header setting
   const bottomSetting: BottomColorSetting = appData.settings.bottomColor;
-  const [frontSetting, setFrontSetting] = useState<ColorSetting>('random');
-  const [autoContinue, setAutoContinue] = useState(false);
+  
+  // Front color and auto-continue are persisted in settings
+  const frontSetting = appData.settings.edgeKataFrontColor;
+  const autoContinue = appData.settings.edgeKataAutoContinue;
+
+  const setFrontSetting = (value: ColorSetting) => {
+    setAppData(prev => ({
+      ...prev,
+      settings: { ...prev.settings, edgeKataFrontColor: value },
+    }));
+  };
+
+  const setAutoContinue = (value: boolean) => {
+    setAppData(prev => ({
+      ...prev,
+      settings: { ...prev.settings, edgeKataAutoContinue: value },
+    }));
+  };
 
   const [round, setRound] = useState<EdgeKataRound | null>(null);
   const [answerState, setAnswerState] = useState<'idle' | 'correct' | 'incorrect'>('idle');
