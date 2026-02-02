@@ -39,7 +39,7 @@ function getGameHelp(path: string): { title: string; content: React.ReactNode } 
           </ul>
 
           <p className="text-sm text-slate-400">
-            The highlighted edge with dots/X marks is the one you need to classify.
+            The highlighted edge marked with X is the one you need to classify.
           </p>
         </div>
       ),
