@@ -96,13 +96,6 @@ function App() {
     }
   }, []);
 
-  const toggleMute = () => {
-    setAppData(prev => ({
-      ...prev,
-      settings: { ...prev.settings, muted: !prev.settings.muted },
-    }));
-  };
-
   const handleBottomColorChange = (newColor: BottomColorSetting) => {
     setAppData(prev => ({
       ...prev,
@@ -116,8 +109,6 @@ function App() {
         {/* Centered content container */} 
         <div className="w-full max-w-md flex-grow flex flex-col">
           <Header 
-            isMuted={appData.settings.muted} 
-            onToggleMute={toggleMute}
             currentBottomColor={appData.settings.bottomColor}
             onBottomColorChange={handleBottomColorChange}
           />
