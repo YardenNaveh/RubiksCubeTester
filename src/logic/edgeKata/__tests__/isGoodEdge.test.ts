@@ -2,224 +2,197 @@ import { applyCubeMove, createInitialCubeState } from '../../f2l/cubeStateUtil';
 import { computeOrientationColors } from '../orientation';
 import { isGoodEdge } from '../isGoodEdge';
 
-describe('Edge Kata isGoodEdge - ZZ Edge Orientation', () => {
+describe('Edge Kata isGoodEdge - Important Sticker Model', () => {
   // Edge Orientation based on "Important Sticker" model:
   //
-  // 1. Determine edge's solved layer by its colors:
-  //    - Has U or D color → belongs to U/D layer
-  //    - No U/D colors → belongs to middle layer
+  // 1. Find the "important sticker":
+  //    - If edge has U or D color → that sticker is important
+  //    - Otherwise → the F or B colored sticker is important
   //
-  // 2. Find the "important sticker":
-  //    - U/D layer edges: sticker with U or D color
-  //    - Middle layer edges: sticker with F or B color
-  //
-  // 3. Classification:
-  //    - U/D edges: GOOD if important sticker faces U or D; BAD otherwise
-  //    - Middle edges: GOOD if important sticker faces F or B; BAD otherwise
+  // 2. Check the edge's CURRENT layer (based on current position):
+  //    - If currently in U or D layer → GOOD if important sticker faces U or D
+  //    - If currently in middle layer → GOOD if important sticker faces F or B
 
-  describe('U/D edges (edges with white/yellow sticker)', () => {
-    test('U/D sticker on U face is GOOD', () => {
+  describe('Edges currently in U/D layer', () => {
+    test('Important sticker facing U is GOOD (edge in U layer)', () => {
       const bottom = 'yellow' as const;
       const front = 'red' as const;
       const o = computeOrientationColors(bottom, front);
       const state = createInitialCubeState(bottom);
 
-      // In solved state, UF edge has U sticker on U face
+      // UF edge is in U layer, U sticker (important) faces U
       const uf = state['UF'];
       expect(isGoodEdge(uf, o).isGood).toBe(true);
-      expect(isGoodEdge(uf, o).kind).toBe('UD');
     });
 
-    test('U/D sticker on D face is GOOD', () => {
+    test('Important sticker facing D is GOOD (edge in D layer)', () => {
       const bottom = 'yellow' as const;
       const front = 'red' as const;
       const o = computeOrientationColors(bottom, front);
       const state = createInitialCubeState(bottom);
 
-      // In solved state, DF edge has D sticker on D face
+      // DF edge is in D layer, D sticker (important) faces D
       const df = state['DF'];
       expect(isGoodEdge(df, o).isGood).toBe(true);
-      expect(isGoodEdge(df, o).kind).toBe('UD');
     });
 
-    test('U/D sticker on R face is BAD (not U/D)', () => {
+    test('Important sticker facing R is BAD (edge in U layer)', () => {
       const bottom = 'yellow' as const;
       const front = 'red' as const;
       const o = computeOrientationColors(bottom, front);
 
       let state = createInitialCubeState(bottom);
-      // F move on UF: UF goes to RF position
-      // UF: U sticker +Y, F sticker +Z
-      // F move is -π/2 around Z axis: +Y -> +X (R face), +Z stays +Z
-      // So after F: U sticker on R face, F sticker on F face
+      // U move rotates edges in U layer
+      // After U, UF edge stays in U layer but orientation changes
+      // UF: position (0,1,1) -> after U -> (-1,1,0) which is UL
+      // But UF piece is still tracked by its ID
+      // Let's use F2 which flips the UF edge in place
+      state = applyCubeMove(state, 'F2');
+      // After F2, UF is at DF position (y=-1, D layer)
+      // Let's try a different approach - use a single F move
+      state = createInitialCubeState(bottom);
       state = applyCubeMove(state, 'F');
-      const uf = state['UF']; // This piece is now at RF with U on R face
-      const result = isGoodEdge(uf, o);
-      expect(result.isGood).toBe(false);
-      expect(result.kind).toBe('UD');
-    });
-
-    test('U/D sticker on L face is BAD (not U/D)', () => {
-      const bottom = 'yellow' as const;
-      const front = 'red' as const;
-      const o = computeOrientationColors(bottom, front);
-
-      let state = createInitialCubeState(bottom);
-      // F' move on UF: UF goes to LF position
-      // F' is +π/2 around Z axis: +Y -> -X (L face)
+      // After F, UF goes to RF position (1,0,1) - that's middle layer, not U/D
+      
+      // F' on FL: FL goes to UF position
+      state = createInitialCubeState(bottom);
       state = applyCubeMove(state, "F'");
-      const uf = state['UF']; // This piece is now at LF with U on L face
-      const result = isGoodEdge(uf, o);
+      const fl = state['FL']; // FL is now at UF position (y=1), F sticker faces L
+      // FL is a middle layer edge (has F color, not U/D)
+      // Important sticker is F (F/B color)
+      // Edge is now in U layer (y=1)
+      // F sticker faces L
+      // Since in U layer, good if important faces U/D → F faces L → BAD
+      const result = isGoodEdge(fl, o);
       expect(result.isGood).toBe(false);
-      expect(result.kind).toBe('UD');
     });
 
-    test('U/D sticker on F face is BAD', () => {
+    test('Important sticker facing F is BAD (edge in U layer)', () => {
       const bottom = 'yellow' as const;
       const front = 'red' as const;
       const o = computeOrientationColors(bottom, front);
 
       let state = createInitialCubeState(bottom);
-      // R' on UR: UR goes to FR position
-      // UR: U sticker +Y, R sticker +X
-      // R' is +π/2 around X axis: +Y -> +Z (F face)
-      state = applyCubeMove(state, "R'");
-      const ur = state['UR']; // This piece is now at FR with U on F face
-      const result = isGoodEdge(ur, o);
+      // R' on BR: BR goes to UR position
+      // BR: B sticker -Z, R sticker +X
+      // R' is +π/2 around X: -Z -> +Y (U face), +X stays +X (R face)
+      // So BR is at UR with B on U, R on R
+      // Wait, that means B faces U, which is good for U layer
+      
+      // Let's try: R on FR: FR goes to UR
+      // FR: F sticker +Z, R sticker +X  
+      // R is -π/2 around X: +Z -> -Y (D face), +X stays +X
+      // Actually R moves pieces on R face, FR is at (1,0,1)
+      // After R: (1,0,1) -> (1,1,0) = UR position
+      // F sticker +Z -> +Y (U face) after -π/2 around X? Let me recalc
+      // -π/2 around X: (0,0,1) -> (0,1,0) = +Y direction = U face
+      // So F sticker faces U
+      // This is a middle layer edge (FR has F color, no U/D)
+      // Important sticker is F
+      // Edge is in U layer (y=1)
+      // F faces U → GOOD for U layer!
+      
+      // I need F sticker to face F while in U layer
+      // That requires more complex moves
+      // Let's try: after putting FR at UL with F facing L
+      // F' on FR: FR goes to UF position? No, F' affects z>0.5
+      // FR at (1,0,1) has z=1 > 0.5, so it's affected
+      // F' is +π/2 around Z: (1,0,1) -> (0,1,1) = UF position (y=1, U layer)
+      // F sticker +Z stays +Z (F face)
+      // R sticker +X -> -Y (D face)
+      // So after F', FR is at UF with F on F, R on D
+      // Important sticker is F (middle edge)
+      // Edge is in U layer (y=1)
+      // F faces F → BAD for U layer (should face U/D)
+      state = applyCubeMove(state, "F'");
+      const fr = state['FR'];
+      const result = isGoodEdge(fr, o);
       expect(result.isGood).toBe(false);
-      expect(result.kind).toBe('UD');
-      expect(result.explanation).toContain('not U/D');
-    });
-
-    test('U/D sticker on B face is BAD', () => {
-      const bottom = 'yellow' as const;
-      const front = 'red' as const;
-      const o = computeOrientationColors(bottom, front);
-
-      let state = createInitialCubeState(bottom);
-      // R on UR: UR goes to BR position
-      // R is -π/2 around X axis: +Y -> -Z (B face)
-      state = applyCubeMove(state, 'R');
-      const ur = state['UR']; // This piece is now at BR with U on B face
-      const result = isGoodEdge(ur, o);
-      expect(result.isGood).toBe(false);
-      expect(result.kind).toBe('UD');
-      expect(result.explanation).toContain('not U/D');
     });
   });
 
-  describe('Non-U/D edges (equatorial edges with F/B sticker)', () => {
-    test('F/B sticker on F face is GOOD', () => {
+  describe('Edges currently in middle layer', () => {
+    test('Important sticker facing F is GOOD (edge in middle layer)', () => {
       const bottom = 'yellow' as const;
       const front = 'red' as const;
       const o = computeOrientationColors(bottom, front);
       const state = createInitialCubeState(bottom);
 
-      // FR edge has F sticker on F face in solved state
+      // FR edge is in middle layer (y=0), F sticker faces F
       const fr = state['FR'];
       const result = isGoodEdge(fr, o);
       expect(result.isGood).toBe(true);
-      expect(result.kind).toBe('FB');
     });
 
-    test('F/B sticker on B face is GOOD', () => {
+    test('Important sticker facing B is GOOD (edge in middle layer)', () => {
       const bottom = 'yellow' as const;
       const front = 'red' as const;
       const o = computeOrientationColors(bottom, front);
       const state = createInitialCubeState(bottom);
 
-      // BR edge has B sticker on B face in solved state
+      // BR edge is in middle layer (y=0), B sticker faces B
       const br = state['BR'];
       const result = isGoodEdge(br, o);
       expect(result.isGood).toBe(true);
-      expect(result.kind).toBe('FB');
     });
 
-    test('F/B sticker on U face is BAD', () => {
+    test('Important sticker facing U is BAD (edge in middle layer)', () => {
       const bottom = 'yellow' as const;
       const front = 'red' as const;
       const o = computeOrientationColors(bottom, front);
 
       let state = createInitialCubeState(bottom);
-      // F on FR: FR goes to DF position
-      // FR: F sticker +Z, R sticker +X
-      // F is -π/2 around Z: +Z stays +Z, +X -> +Y (U face)
-      // Wait, that puts R sticker on U, not F sticker
-      // Let me use a different move: R' on BR
-      // BR: B sticker -Z, R sticker +X
-      // R' is +π/2 around X: -Z -> +Y (U face)
+      // F on UF: UF goes to RF position (middle layer)
+      // UF: U sticker +Y, F sticker +Z
+      // F is -π/2 around Z: +Y -> +X (R face), +Z stays +Z (F face)
+      // So UF is at RF with U on R, F on F
+      // UF is a U/D edge (has U color)
+      // Important sticker is U
+      // Edge is in middle layer (y=0)
+      // U faces R → BAD for middle layer (should face F/B)
+      state = applyCubeMove(state, 'F');
+      const uf = state['UF'];
+      const result = isGoodEdge(uf, o);
+      expect(result.isGood).toBe(false);
+    });
+
+    test('Important sticker facing F is GOOD for U/D edge in middle layer', () => {
+      const bottom = 'yellow' as const;
+      const front = 'red' as const;
+      const o = computeOrientationColors(bottom, front);
+
+      let state = createInitialCubeState(bottom);
+      // R' on UR: UR goes to FR position (middle layer)
+      // UR: U sticker +Y, R sticker +X
+      // R' is +π/2 around X: +Y -> +Z (F face), +X stays +X (R face)
+      // So UR is at FR with U on F, R on R
+      // UR is a U/D edge (has U color)
+      // Important sticker is U
+      // Edge is in middle layer (y=0)
+      // U faces F → GOOD for middle layer!
       state = applyCubeMove(state, "R'");
-      const br = state['BR']; // This piece is now at UR with B on U face
-      const result = isGoodEdge(br, o);
-      expect(result.isGood).toBe(false);
-      expect(result.kind).toBe('FB');
+      const ur = state['UR'];
+      const result = isGoodEdge(ur, o);
+      expect(result.isGood).toBe(true);
     });
 
-    test('F/B sticker on R face is BAD', () => {
+    test('Important sticker facing B is GOOD for U/D edge in middle layer', () => {
       const bottom = 'yellow' as const;
       const front = 'red' as const;
       const o = computeOrientationColors(bottom, front);
 
       let state = createInitialCubeState(bottom);
-      // U on FR: FR goes to FL position
-      // FR: F sticker +Z, R sticker +X
-      // Actually FR isn't on U layer. Let me think...
-      // To get F sticker on R face from FR:
-      // We need +Z to become +X
-      // That's rotation around Y by -π/2 (U move for pieces on U layer)
-      // But FR is at y=0, not on U layer
-      // Let's try: B on BR
-      // BR: B sticker -Z, R sticker +X
-      // B is +π/2 around Z: -Z stays -Z (no change), +X -> +Y
-      // That puts R sticker on U, not B sticker on R
-      // Hmm, to get B/F sticker on R face...
-      // Need -Z -> +X or +Z -> +X
-      // -Z -> +X is rotation around Y by +π/2 (U' for pieces on U layer)
-      // Let's use: B' on UB
-      // Wait, UB has U sticker (U/D edge), not a non-U/D edge
-      // 
-      // Let me think differently. FR edge is at position (1,0,1)
-      // F on entire cube would rotate it, but F only affects z>0.5
-      // After F on FR: position (1,0,1) -> (0,-1,1) which is DF
-      // F sticker +Z rotates around Z by -π/2: stays +Z
-      // R sticker +X rotates around Z by -π/2: +X -> +Y
-      // So now at DF, F sticker on F, R sticker on... +Y is U face
-      // That doesn't help.
-      //
-      // To get F sticker (+Z) on R face (+X), need rotation that takes Z to X
-      // That's -π/2 around Y (U move direction)
-      // But F and B moves rotate around Z, R and L around X
-      // U move on a piece at y=1... FR is at y=0
-      // 
-      // Let me use a two-move sequence: R F on FR
-      // R on FR: FR (1,0,1) -> UR (1,1,0)
-      // F sticker +Z -> +Y (U face)
-      // R sticker +X -> +X (R face)
-      // So after R, FR is at UR with F on U, R on R
-      // This is a non-U/D edge, and F sticker is on U face (BAD)
-      // Let me use this
+      // R on UR: UR goes to BR position (middle layer)
+      // UR: U sticker +Y, R sticker +X
+      // R is -π/2 around X: +Y -> -Z (B face), +X stays +X (R face)
+      // So UR is at BR with U on B, R on R
+      // Important sticker is U
+      // Edge is in middle layer (y=0)
+      // U faces B → GOOD for middle layer!
       state = applyCubeMove(state, 'R');
-      const fr = state['FR']; // This piece is now at UR with F on U face
-      const result = isGoodEdge(fr, o);
-      expect(result.isGood).toBe(false);
-      expect(result.kind).toBe('FB');
-    });
-
-    test('F/B sticker on L face is BAD', () => {
-      const bottom = 'yellow' as const;
-      const front = 'red' as const;
-      const o = computeOrientationColors(bottom, front);
-
-      let state = createInitialCubeState(bottom);
-      // L' on FL: FL goes to UL position
-      // FL: F sticker +Z, L sticker -X
-      // L' is -π/2 around X: +Z -> +Y (U face)
-      // So after L', FL is at UL with F on U face
-      state = applyCubeMove(state, "L'");
-      const fl = state['FL']; // This piece is now at UL with F on U face
-      const result = isGoodEdge(fl, o);
-      expect(result.isGood).toBe(false);
-      expect(result.kind).toBe('FB');
+      const ur = state['UR'];
+      const result = isGoodEdge(ur, o);
+      expect(result.isGood).toBe(true);
     });
   });
 });

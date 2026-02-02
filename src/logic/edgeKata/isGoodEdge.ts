@@ -44,45 +44,56 @@ export function isGoodEdge(liveEdge: LiveCubieState, orientation: OrientationCol
 
   const { UColor, DColor, FColor, BColor } = orientation;
 
-  // Determine edge's solved layer based on its colors:
-  // - If edge has U or D color → belongs to U or D layer (top/bottom)
-  // - If edge has NO U/D colors → belongs to middle layer
-  const belongsToUDLayer = c1 === UColor || c1 === DColor || c2 === UColor || c2 === DColor;
-
-  if (belongsToUDLayer) {
-    // U/D layer edge: the "important sticker" is the one with U or D color
-    const importantStickerIndex = (c1 === UColor || c1 === DColor) ? 1 : 2;
-    const importantColor = importantStickerIndex === 1 ? c1 : c2;
-    const importantFace = importantStickerIndex === 1 ? f1 : f2;
-    
-    // GOOD if important sticker is facing U or D
-    // BAD if important sticker is facing any side face (F, B, L, R)
-    const good = importantFace === 'U' || importantFace === 'D';
-
-    return {
-      isGood: good,
-      kind: 'UD',
-      explanation: good
-        ? `U/D edge: the ${importantColor} sticker is facing ${importantFace}, so Good.`
-        : `U/D edge: the ${importantColor} sticker is facing ${importantFace} (not U/D), so Bad.`,
-    };
+  // Step 1: Find the "important sticker"
+  // - If edge has U or D color → that sticker is important
+  // - Otherwise → the F or B colored sticker is important
+  const hasUDColor = c1 === UColor || c1 === DColor || c2 === UColor || c2 === DColor;
+  
+  let importantColor: CubeColor;
+  let importantFace: Face;
+  let edgeKind: EdgeKind;
+  
+  if (hasUDColor) {
+    // Important sticker is the one with U or D color
+    const isFirstSticker = c1 === UColor || c1 === DColor;
+    importantColor = isFirstSticker ? c1 : c2;
+    importantFace = isFirstSticker ? f1 : f2;
+    edgeKind = 'UD';
+  } else {
+    // Important sticker is the one with F or B color
+    const isFirstSticker = c1 === FColor || c1 === BColor;
+    importantColor = isFirstSticker ? c1 : c2;
+    importantFace = isFirstSticker ? f1 : f2;
+    edgeKind = 'FB';
   }
 
-  // Middle layer edge: the "important sticker" is the one with F or B color
-  const importantStickerIndex = (c1 === FColor || c1 === BColor) ? 1 : 2;
-  const importantColor = importantStickerIndex === 1 ? c1 : c2;
-  const importantFace = importantStickerIndex === 1 ? f1 : f2;
-  
-  // GOOD if important sticker is facing F or B
-  // BAD if important sticker is facing any other face (U, D, L, R)
-  const good = importantFace === 'F' || importantFace === 'B';
+  // Step 2: Determine the edge's CURRENT layer based on its current position
+  // y ≈ 1 → U layer, y ≈ -1 → D layer, y ≈ 0 → middle layer
+  const currentY = Math.round(liveEdge.currentPosition.y);
+  const isCurrentlyInUDLayer = currentY === 1 || currentY === -1;
+
+  // Step 3: Classification based on CURRENT layer
+  // - If currently in U/D layer → good if important sticker faces U or D
+  // - If currently in middle layer → good if important sticker faces F or B
+  let good: boolean;
+  let explanation: string;
+
+  if (isCurrentlyInUDLayer) {
+    good = importantFace === 'U' || importantFace === 'D';
+    explanation = good
+      ? `Edge in U/D layer: ${importantColor} sticker faces ${importantFace}, so Good.`
+      : `Edge in U/D layer: ${importantColor} sticker faces ${importantFace} (not U/D), so Bad.`;
+  } else {
+    good = importantFace === 'F' || importantFace === 'B';
+    explanation = good
+      ? `Edge in middle layer: ${importantColor} sticker faces ${importantFace}, so Good.`
+      : `Edge in middle layer: ${importantColor} sticker faces ${importantFace} (not F/B), so Bad.`;
+  }
 
   return {
     isGood: good,
-    kind: 'FB',
-    explanation: good
-      ? `Middle edge: the ${importantColor} sticker is facing ${importantFace}, so Good.`
-      : `Middle edge: the ${importantColor} sticker is facing ${importantFace} (not F/B), so Bad.`,
+    kind: edgeKind,
+    explanation,
   };
 }
 
