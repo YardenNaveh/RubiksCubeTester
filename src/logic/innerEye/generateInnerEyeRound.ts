@@ -26,20 +26,23 @@ interface F2LSlot {
   isFront: boolean;
 }
 
-const ALL_MOVES: AllMoves[] = [
-  'U', "U'", 'U2',
-  'R', "R'", 'R2',
-  'L', "L'", 'L2',
-  'F', "F'", 'F2',
-  'B', "B'", 'B2',
-];
+// U moves for cross-preserving scrambles
+type UVariation = 'U' | "U'" | 'U2';
+type SetupMove = 'R' | "R'" | 'L' | "L'" | 'F' | "F'" | 'B' | "B'";
 
-function randomMoveAvoidingRepeat(prevBase: string | null): AllMoves {
-  while (true) {
-    const move = ALL_MOVES[Math.floor(Math.random() * ALL_MOVES.length)];
-    const base = move.replace(/['2]/g, '');
-    if (base !== prevBase) return move;
-  }
+const U_VARIATIONS: UVariation[] = ['U', "U'", 'U2'];
+const SETUP_MOVES: SetupMove[] = ['R', "R'", 'L', "L'", 'F', "F'", 'B', "B'"];
+
+function getRandomUMove(): UVariation {
+  return U_VARIATIONS[Math.floor(Math.random() * U_VARIATIONS.length)];
+}
+
+function getRandomSetupMove(): SetupMove {
+  return SETUP_MOVES[Math.floor(Math.random() * SETUP_MOVES.length)];
+}
+
+function inverseMove(move: SetupMove): SetupMove {
+  return move.endsWith("'") ? (move.slice(0, -1) as SetupMove) : ((move + "'") as SetupMove);
 }
 
 /**
@@ -125,8 +128,58 @@ function isPieceInSolvedPosition(state: RubiksCubeState, pieceId: string): boole
 }
 
 /**
+ * Simplifies consecutive moves by canceling/combining where possible.
+ */
+function simplifyMoves(moves: AllMoves[]): AllMoves[] {
+  if (moves.length < 2) return moves;
+  
+  const result: AllMoves[] = [];
+  
+  for (const move of moves) {
+    if (result.length === 0) {
+      result.push(move);
+      continue;
+    }
+    
+    const lastMove = result[result.length - 1];
+    const lastBase = lastMove.replace(/['2]/g, '');
+    const currentBase = move.replace(/['2]/g, '');
+    
+    if (lastBase !== currentBase) {
+      result.push(move);
+      continue;
+    }
+    
+    const getRotation = (m: string): number => {
+      if (m.includes('2')) return 2;
+      if (m.includes("'")) return 3;
+      return 1;
+    };
+    
+    const totalRotation = (getRotation(lastMove) + getRotation(move)) % 4;
+    
+    result.pop();
+    
+    if (totalRotation === 0) {
+      // Moves cancel out
+    } else if (totalRotation === 1) {
+      result.push(currentBase as AllMoves);
+    } else if (totalRotation === 2) {
+      result.push((currentBase + '2') as AllMoves);
+    } else if (totalRotation === 3) {
+      result.push((currentBase + "'") as AllMoves);
+    }
+  }
+  
+  return result;
+}
+
+/**
  * Generate a scrambled cube state with cross solved and specific F2L pairs solved
  * based on difficulty level.
+ * 
+ * Uses cross-preserving conjugate patterns (setup-U-unsetup) to scramble
+ * while keeping the cross intact.
  * 
  * Difficulty levels:
  * - Level 1: cross + 3 F2L pairs (2 front, 1 back) - easiest
@@ -137,56 +190,84 @@ function isPieceInSolvedPosition(state: RubiksCubeState, pieceId: string): boole
 function generateCubeState(
   bottomColor: CubeColor,
   difficulty: DifficultyLevel,
-  maxAttempts: number = 500
+  maxAttempts: number = 300
 ): RubiksCubeState {
-  const crossEdges = getCrossEdgeIds(bottomColor);
   const f2lSlots = getF2LSlotsForBottom(bottomColor);
   
   // Determine how many pairs should be solved based on difficulty
-  let targetFrontPairs: number;
-  let targetBackPairs: number;
+  // For easier levels, we want more pairs solved
+  // For harder levels, we want fewer pairs solved
+  let minFrontPairs: number;
+  let maxFrontPairs: number;
+  let minBackPairs: number;
+  let maxBackPairs: number;
   
   switch (difficulty) {
-    case 1: // cross + 3 F2L (2 front, 1 back)
-      targetFrontPairs = 2;
-      targetBackPairs = 1;
+    case 1: // cross + 3 F2L (easiest)
+      minFrontPairs = 2;
+      maxFrontPairs = 2;
+      minBackPairs = 1;
+      maxBackPairs = 2;
       break;
-    case 2: // cross + 2 front F2L
-      targetFrontPairs = 2;
-      targetBackPairs = 0;
+    case 2: // cross + 2 F2L pairs
+      minFrontPairs = 1;
+      maxFrontPairs = 2;
+      minBackPairs = 0;
+      maxBackPairs = 1;
       break;
-    case 3: // cross + 1 front F2L
-      targetFrontPairs = 1;
-      targetBackPairs = 0;
+    case 3: // cross + 1 F2L pair
+      minFrontPairs = 0;
+      maxFrontPairs = 1;
+      minBackPairs = 0;
+      maxBackPairs = 1;
       break;
-    case 4: // only cross
+    case 4: // only cross (hardest)
     default:
-      targetFrontPairs = 0;
-      targetBackPairs = 0;
+      minFrontPairs = 0;
+      maxFrontPairs = 0;
+      minBackPairs = 0;
+      maxBackPairs = 0;
       break;
   }
   
-  // Generate states until we find one that matches our criteria
+  // Track the best state found
+  let bestState: RubiksCubeState | null = null;
+  let bestScore = -1;
+  
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     let state = createInitialCubeState(bottomColor);
+    const moves: AllMoves[] = [];
     
-    // Apply random moves to scramble
-    const numMoves = 15 + Math.floor(Math.random() * 10);
-    let prevBase: string | null = null;
+    // Number of conjugates to apply (more for harder difficulties)
+    const numConjugates = difficulty === 4 ? 8 + Math.floor(Math.random() * 6) :
+                          difficulty === 3 ? 6 + Math.floor(Math.random() * 5) :
+                          difficulty === 2 ? 4 + Math.floor(Math.random() * 4) :
+                                             2 + Math.floor(Math.random() * 3);
     
-    for (let i = 0; i < numMoves; i++) {
-      const move = randomMoveAvoidingRepeat(prevBase);
-      prevBase = move.replace(/['2]/g, '');
-      state = applyCubeMove(state, move);
+    // Apply cross-preserving conjugates
+    for (let i = 0; i < numConjugates; i++) {
+      const setup = getRandomSetupMove();
+      const inv = inverseMove(setup);
+      
+      // Apply: setup, U-moves, inverse
+      moves.push(setup);
+      const numUMoves = 1 + Math.floor(Math.random() * 3);
+      for (let j = 0; j < numUMoves; j++) {
+        moves.push(getRandomUMove());
+      }
+      moves.push(inv);
+      
+      // Sometimes add an extra U between conjugates
+      if (Math.random() < 0.4) {
+        moves.push(getRandomUMove());
+      }
     }
     
-    // Check cross is solved
-    const crossSolved = crossEdges.every(id => isPieceInSolvedPosition(state, id));
-    if (!crossSolved) continue;
-    
-    // Check the D center (or relevant center for bottom) is in place
-    // For a proper cross, the bottom center must also be solved
-    // Since centers don't move, this is always true
+    // Simplify and apply moves
+    const simplifiedMoves = simplifyMoves(moves);
+    for (const move of simplifiedMoves) {
+      state = applyCubeMove(state, move);
+    }
     
     // Count solved F2L pairs
     let solvedFrontPairs = 0;
@@ -206,14 +287,30 @@ function generateCubeState(
     }
     
     // Check if this state matches our difficulty criteria
-    // We want exactly the target number of pairs, not more
-    if (solvedFrontPairs === targetFrontPairs && solvedBackPairs === targetBackPairs) {
+    const frontOk = solvedFrontPairs >= minFrontPairs && solvedFrontPairs <= maxFrontPairs;
+    const backOk = solvedBackPairs >= minBackPairs && solvedBackPairs <= maxBackPairs;
+    const totalPairs = solvedFrontPairs + solvedBackPairs;
+    
+    if (frontOk && backOk) {
       return state;
+    }
+    
+    // Track best state as fallback
+    // Score based on how close we are to target
+    const targetTotal = (minFrontPairs + maxFrontPairs) / 2 + (minBackPairs + maxBackPairs) / 2;
+    const score = -Math.abs(totalPairs - targetTotal);
+    
+    if (score > bestScore) {
+      bestScore = score;
+      bestState = state;
     }
   }
   
-  // Fallback: return a solved cube with only cross visible
-  // This should rarely happen
+  // Return best state found, or solved cube as last resort
+  if (bestState) {
+    return bestState;
+  }
+  
   console.warn('Could not generate valid state for difficulty', difficulty);
   return createInitialCubeState(bottomColor);
 }
