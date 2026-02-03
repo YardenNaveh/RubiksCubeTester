@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { AllMoves, applyCubeMove, createInitialCubeState, LiveCubieState, RubiksCubeState } from '../f2l/cubeStateUtil';
-import { CubeColor, COLORS } from '../cubeConstants';
+import { CubeColor, COLORS, COLOR_PAIRS } from '../cubeConstants';
 import { QuestionType } from '../../state/zanshinRecallStore';
 
 // Sticker identifier: "cubieId-face" e.g., "UFR-U", "UF-F"
@@ -142,12 +142,19 @@ function getPieceDescription(cubie: LiveCubieState): string {
 /**
  * Generate a Piece Recall round
  * "Where is the red-green edge?"
+ * Only selects F2L pieces (pieces without U color sticker)
  */
-function generatePieceRecallRound(state: RubiksCubeState, onlyVisible: boolean): PieceRecallRound {
-  // Get all edges and corners (not centers)
-  const pieces = Object.values(state).filter(p => 
-    p.definition.type === 'edge' || p.definition.type === 'corner'
-  );
+function generatePieceRecallRound(state: RubiksCubeState, onlyVisible: boolean, bottomColor: CubeColor): PieceRecallRound {
+  // U color is opposite of bottom
+  const uColor = COLOR_PAIRS[bottomColor];
+  
+  // Get all edges and corners (not centers) that are F2L pieces (no U color sticker)
+  const pieces = Object.values(state).filter(p => {
+    if (p.definition.type !== 'edge' && p.definition.type !== 'corner') return false;
+    // F2L pieces don't have the U color
+    const hasUColor = p.definition.stickers.some(s => s.color === uColor);
+    return !hasUColor;
+  });
   
   // If only visible, filter to pieces with at least one visible sticker
   let candidates = pieces;
@@ -157,7 +164,7 @@ function generatePieceRecallRound(state: RubiksCubeState, onlyVisible: boolean):
     );
   }
   
-  // Fall back to all pieces if no visible candidates
+  // Fall back to all F2L pieces if no visible candidates
   if (candidates.length === 0) candidates = pieces;
   
   const target = candidates[Math.floor(Math.random() * candidates.length)];
@@ -243,7 +250,7 @@ export function generateZanshinRound(settings: ZanshinRoundSettings): ZanshinRou
   
   switch (questionType) {
     case 'pieceRecall':
-      return generatePieceRecallRound(state, onlyVisibleStickers);
+      return generatePieceRecallRound(state, onlyVisibleStickers, actualBottomColor);
     case 'stickerSetRecall':
       return generateStickerSetRecallRound(state, onlyVisibleStickers);
     case 'singleStickerRecall':
