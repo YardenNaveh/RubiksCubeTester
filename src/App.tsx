@@ -7,6 +7,8 @@ import EdgeKataPage from './pages/EdgeKataPage';
 import EdgeKataStatsPage from './pages/EdgeKataStatsPage';
 import ZanshinRecallPage from './pages/ZanshinRecallPage';
 import ZanshinRecallStatsPage from './pages/ZanshinRecallStatsPage';
+import InnerEyeDeductionPage from './pages/InnerEyeDeductionPage';
+import InnerEyeStatsPage from './pages/InnerEyeStatsPage';
 import { useAppStorage } from './hooks/useLocalStorage';
 import Header from './components/Header';
 import { useEffect } from 'react';
@@ -23,6 +25,8 @@ function FooterNav() {
   const isEdgeKataStats = path === '/edge-kata/stats';
   const isZanshinRecall = path.startsWith('/zanshin-recall');
   const isZanshinRecallStats = path === '/zanshin-recall/stats';
+  const isInnerEye = path.startsWith('/inner-eye');
+  const isInnerEyeStats = path === '/inner-eye/stats';
   const isColorStats = path === '/stats';
 
   if (isF2L) {
@@ -56,6 +60,18 @@ function FooterNav() {
           <Link to="/zanshin-recall" className="hover:text-sky-400">Back to Zanshin Recall</Link>
         ) : (
           <Link to="/zanshin-recall/stats" className="hover:text-sky-400">View Zanshin Recall Stats</Link>
+        )}
+      </footer>
+    );
+  }
+
+  if (isInnerEye) {
+    return (
+      <footer className="p-4 text-center text-sm text-slate-400">
+        {isInnerEyeStats ? (
+          <Link to="/inner-eye" className="hover:text-sky-400">Back to Inner Eye</Link>
+        ) : (
+          <Link to="/inner-eye/stats" className="hover:text-sky-400">View Inner Eye Stats</Link>
         )}
       </footer>
     );
@@ -138,6 +154,8 @@ function App() {
               <Route path="/edge-kata/stats" element={<EdgeKataStatsPage />} />
               <Route path="/zanshin-recall" element={<ZanshinRecallPage appData={appData} setAppData={setAppData} />} />
               <Route path="/zanshin-recall/stats" element={<ZanshinRecallStatsPage />} />
+              <Route path="/inner-eye" element={<InnerEyeDeductionPage appData={appData} setAppData={setAppData} />} />
+              <Route path="/inner-eye/stats" element={<InnerEyeStatsPage />} />
               <Route path="/stats" element={<StatsPage appData={appData} setAppData={setAppData} />} />
               <Route path="*" element={<Navigate to="/color-sensei" replace />} />
             </Routes>

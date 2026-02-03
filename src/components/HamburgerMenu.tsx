@@ -38,6 +38,7 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = () => {
     { path: '/f2l', label: 'F2L Pair Ninja' },
     { path: '/edge-kata', label: 'Edge Kata' },
     { path: '/zanshin-recall', label: 'Zanshin Recall' },
+    { path: '/inner-eye', label: 'Inner Eye Deduction' },
   ];
 
   return (

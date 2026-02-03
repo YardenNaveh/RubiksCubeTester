@@ -19,6 +19,41 @@ function formatDeploymentDate(isoDate: string): string {
 }
 
 function getGameHelp(path: string): { title: string; content: React.ReactNode } {
+  if (path.startsWith('/inner-eye')) {
+    return {
+      title: 'Inner Eye Deduction',
+      content: (
+        <div className="space-y-3">
+          <p>Train your <strong>cube deduction skills</strong> — figure out hidden piece colors using logic.</p>
+          
+          <h3 className="font-semibold text-sky-400">How to Play</h3>
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            <li>A cube state is shown with <strong>cross solved</strong> plus some F2L pairs</li>
+            <li>One edge or corner piece is <strong>blacked out</strong> (hidden)</li>
+            <li><strong>Rotate the cube</strong> freely to see all visible stickers</li>
+            <li>Deduce the hidden piece's colors using logic</li>
+            <li>Select the correct colors (2 for edge, 3 for corner)</li>
+          </ul>
+
+          <h3 className="font-semibold text-sky-400">Difficulty Levels</h3>
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            <li><strong>Level 1:</strong> Cross + 3 F2L pairs (easiest)</li>
+            <li><strong>Level 2:</strong> Cross + 2 F2L pairs</li>
+            <li><strong>Level 3:</strong> Cross + 1 F2L pair</li>
+            <li><strong>Level 4:</strong> Cross only (hardest)</li>
+          </ul>
+
+          <h3 className="font-semibold text-sky-400">Deduction Tips</h3>
+          <ul className="list-disc list-inside space-y-1 text-sm">
+            <li>Opposite colors (white/yellow, red/orange, blue/green) can never be on the same piece</li>
+            <li>Each color appears exactly 9 times on a solved cube</li>
+            <li>Count visible colors to narrow down possibilities</li>
+          </ul>
+        </div>
+      ),
+    };
+  }
+
   if (path.startsWith('/zanshin-recall')) {
     return {
       title: 'Zanshin Recall',
