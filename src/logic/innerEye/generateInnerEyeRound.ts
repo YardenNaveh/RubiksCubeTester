@@ -316,7 +316,8 @@ function generateCubeState(
 }
 
 /**
- * Get all valid pieces that can be hidden (edges and corners, not centers)
+ * Get all valid pieces that can be hidden (F2L edges and corners only)
+ * F2L pieces are those without a U color sticker
  * Excludes pieces that are part of the cross or solved F2L pairs
  */
 function getHideablePieces(
@@ -325,6 +326,9 @@ function getHideablePieces(
 ): { id: string; type: PieceType }[] {
   const crossEdges = new Set(getCrossEdgeIds(bottomColor));
   const f2lSlots = getF2LSlotsForBottom(bottomColor);
+  
+  // U color is opposite of bottom
+  const uColor = COLOR_PAIRS[bottomColor];
   
   // Get solved F2L piece IDs
   const solvedF2LPieces = new Set<string>();
@@ -338,14 +342,14 @@ function getHideablePieces(
     }
   }
   
-  // Collect all hideable pieces
+  // Collect all hideable pieces (F2L pieces only - no U color)
   const hideablePieces: { id: string; type: PieceType }[] = [];
   
   for (const id in state) {
     const piece = state[id];
     if (!piece) continue;
     
-    const { type } = piece.definition;
+    const { type, stickers } = piece.definition;
     
     // Skip centers
     if (type === 'center') continue;
@@ -355,6 +359,10 @@ function getHideablePieces(
     
     // Skip solved F2L pieces
     if (solvedF2LPieces.has(id)) continue;
+    
+    // Skip pieces with U color sticker (not F2L pieces)
+    const hasUColor = stickers.some(s => s.color === uColor);
+    if (hasUColor) continue;
     
     // Add to hideable list
     hideablePieces.push({
